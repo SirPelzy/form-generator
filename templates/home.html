@@ -5,37 +5,31 @@
 {# --- Hero Section --- #}
 <section class="hero-section">
   <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-lg-9"> {# Slightly wider column #}
-        {# Refined Headline focusing on ease/speed #}
+    <div class="row align-items-center justify-content-between"> {# Use row, align items vertically, adjust justification #}
+
+      {# Left Column: Visual #}
+      <div class="col-md-6 col-lg-5 mb-4 mb-md-0 hero-visual-column"> {# Adjust column size breakdown if needed #}
+        <img src="{{ url_for('static', filename='images/your-actual-image-name.ext') }}" {# <<< UPDATE FILENAME! #}
+             alt="Hero image" {# <<< UPDATE ALT TEXT! #}
+             class="img-fluid rounded shadow-lg">
+         {# Make sure you have uploaded your image to static/images/ #}
+      </div>
+
+      {# Right Column: Text Content #}
+      <div class="col-md-6 hero-text-column text-md-start text-center"> {# Left align text on medium+ screens, center on small #}
+        {# Refined Headline #}
         <h1>Build Custom Web Forms in Minutes, Not Hours</h1>
-        {# Refined Sub-headline focusing on benefits/target audience #}
+        {# Refined Sub-headline #}
         <p class="lead">
           Effortlessly create, embed, and manage forms for your website or project.
-          Perfect for collecting leads, feedback, applications, and more – no coding skills needed.
+          Perfect for collecting leads, feedback, applications, and more – no coding required.
         </p>
-        {# Main CTA #}
-        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg shadow-sm">Get Started Free</a>
-        {# Optional secondary link #}
-        {# <a href="#features" class="btn btn-outline-secondary btn-lg ms-2">See Features</a> #}
+        {# Main CTA - Using custom dark button class #}
+        <a href="{{ url_for('register') }}" class="btn btn-dark-custom btn-lg shadow-sm">Get Started Free</a>
       </div>
-    </div>
-    {# Placeholder for Hero Visual #}
-    <div class="row justify-content-center hero-visual">
-      <div class="col-md-10 col-lg-8">
-         {# Replace with your actual image later #}
-         <img src="https://via.placeholder.com/800x450/43AA8B/FFFFFF?text=App+Screenshot+Here"
-              alt="Screenshot of Form Generator interface showing simple form creation"
-              class="img-fluid rounded shadow-lg">
-         {# Suggested Placeholder: Use a service like placehold.co or via.placeholder.com,
-            OR create static/images folder and put placeholder.png there, then use:
-         <img src="{{ url_for('static', filename='images/hero_placeholder.png') }}"
-              alt="Screenshot of Form Generator interface showing simple form creation"
-              class="img-fluid rounded shadow-lg">
-         #}
-      </div>
-    </div>
-  </div>
+
+    </div> {# End row #}
+  </div> {# End container #}
 </section>
 
 {# --- Features Section --- #}
