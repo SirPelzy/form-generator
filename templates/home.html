@@ -6,43 +6,65 @@
 <section class="hero-section">
   <div class="container">
     <div class="row justify-content-center">
-      <div class="col-lg-8">
-        <h1>Effortless Web Forms, Instantly.</h1>
+      <div class="col-lg-9"> {# Slightly wider column #}
+        {# Refined Headline focusing on ease/speed #}
+        <h1>Build Custom Web Forms in Minutes, Not Hours</h1>
+        {# Refined Sub-headline focusing on benefits/target audience #}
         <p class="lead">
-          Build and embed beautiful, responsive forms on your website in minutes
-          to capture leads, feedback, and registrations. No code required.
+          Effortlessly create, embed, and manage forms for your website or project.
+          Perfect for collecting leads, feedback, applications, and more – no coding skills needed.
         </p>
-        {# Link to registration page #}
-        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Get Started for Free</a>
-        {# Optional: Add a secondary button later #}
-        {# <a href="#features" class="btn btn-outline-secondary btn-lg ms-2">Learn More</a> #}
+        {# Main CTA #}
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg shadow-sm">Get Started Free</a>
+        {# Optional secondary link #}
+        {# <a href="#features" class="btn btn-outline-secondary btn-lg ms-2">See Features</a> #}
       </div>
     </div>
-    {# Optional: Add a clean visual/screenshot here later #}
+    {# Placeholder for Hero Visual #}
+    <div class="row justify-content-center hero-visual">
+      <div class="col-md-10 col-lg-8">
+         {# Replace with your actual image later #}
+         <img src="https://via.placeholder.com/800x450/43AA8B/FFFFFF?text=App+Screenshot+Here"
+              alt="Screenshot of Form Generator interface showing simple form creation"
+              class="img-fluid rounded shadow-lg">
+         {# Suggested Placeholder: Use a service like placehold.co or via.placeholder.com,
+            OR create static/images folder and put placeholder.png there, then use:
+         <img src="{{ url_for('static', filename='images/hero_placeholder.png') }}"
+              alt="Screenshot of Form Generator interface showing simple form creation"
+              class="img-fluid rounded shadow-lg">
+         #}
+      </div>
     </div>
+  </div>
 </section>
 
 {# --- Features Section --- #}
 <section id="features" class="features-section">
   <div class="container">
-    <div class="row text-center g-4">
+    <div class="row text-center g-5"> {# Increased gap between columns #}
       {# Feature 1 #}
       <div class="col-md-4">
-        <div class="feature-icon">📝</div> {# Placeholder Icon #}
+        {# Bootstrap Icon added #}
+        <div class="feature-icon"><i class="bi bi-pencil-square"></i></div>
         <h4>Intuitive Builder</h4>
-        <p>Easily create your perfect form using simple controls.</p>
+        {# Benefit-focused text #}
+        <p>Design your forms quickly with simple controls. No complex setups, just the fields you need.</p>
       </div>
       {# Feature 2 #}
       <div class="col-md-4">
-        <div class="feature-icon">💻</div> {# Placeholder Icon #}
+        {# Bootstrap Icon added #}
+        <div class="feature-icon"><i class="bi bi-code-slash"></i></div>
         <h4>Embed Anywhere</h4>
-        <p>Copy-paste a simple snippet to add forms to any website.</p>
+        {# Benefit-focused text #}
+        <p>Easily add forms to any website builder or HTML page with a simple copy-paste snippet.</p>
       </div>
       {# Feature 3 #}
       <div class="col-md-4">
-        <div class="feature-icon">📊</div> {# Placeholder Icon #}
-        <h4>Simple Dashboard</h4>
-        <p>View and manage all your form submissions clearly in one place.</p>
+        {# Bootstrap Icon added #}
+        <div class="feature-icon"><i class="bi bi-table"></i></div>
+        <h4>Clear Dashboard</h4>
+        {# Benefit-focused text #}
+        <p>View and manage all your responses in one organized place, instantly as they arrive.</p>
       </div>
     </div>
   </div>
@@ -51,8 +73,12 @@
 {# --- Final Call to Action (CTA) Section --- #}
 <section class="cta-section">
     <div class="container">
-        <h2>Ready to start collecting responses?</h2>
-        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Create Your First Form Now</a>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h2>Stop Missing Out. Start Collecting Data Today.</h2>
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg shadow-sm">Create Your Free Form Now</a>
+            </div>
+        </div>
     </div>
 </section>
 
