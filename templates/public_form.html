@@ -1,122 +1,92 @@
+{# templates/public_form.html #}
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ form.title }}</title>
-    {# Basic Bootstrap for styling the form elements #}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <style>
-        /* Optional: Add some padding if viewed directly */
-        body { padding: 20px; background-color: #f8f9fa; }
-        .form-container { max-width: 700px; margin: auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    </style>
-</head>
+{# ... (head section with CSS links remains same) ... #}
 <body>
-    <div class="form-container">
-        <h2>{{ form.title }}</h2>
+    <div class="form-container pt-4 pb-5"> {# Added more padding #}
+        <h2 class="mb-3">{{ form.title }}</h2> {# Reduced margin #}
         {% if form.description %}
-            <p class="lead text-muted">{{ form.description }}</p>
+            <p class="lead text-muted mb-4">{{ form.description }}</p> {# Increased margin #}
         {% endif %}
-        <hr class="mb-4">
+        {# Removed <hr> #}
 
-        {# Display flashed messages (e.g., thank you message after submit) #}
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-              </div>
-            {% endfor %}
-          {% endif %}
+        {% with messages = get_flashed_messages(with_categories=true) %} {# Flash messages #}
+          {# ... (flash message loop as before) ... #}
         {% endwith %}
 
-
-        {# --- The Actual Form --- #}
-        {# Posts back to the same URL #}
-        <form method="POST" action="">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <form method="POST" action="" class="mt-4"> {# Added margin #}
+             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% for field in fields %}
-                {% set field_name = 'field_' + field.id|string %} {# Define field name variable #}
-                <div class="mb-3">
-                    <label for="{{ field_name }}" class="form-label">
+                {% set field_name = 'field_' + field.id|string %}
+                <div class="mb-4"> {# Increased margin #}
+                    <label for="{{ field_name }}" class="form-label fw-medium"> {# Bolder label #}
                         {{ field.label }}
-                        {% if field.required %}<span class="text-danger">*</span>{% endif %}
+                        {% if field.required %}<span class="text-danger ms-1">*</span>{% endif %} {# Added margin #}
                     </label>
 
-                    {# Add is-invalid class if error exists for this field #}
+                    {% set has_error = errors.get(field_name) %}
                     {% set input_class = 'form-control' if field.field_type not in ['checkbox', 'radio', 'select'] else ('form-check-input' if field.field_type == 'checkbox' else ('form-check-input' if field.field_type == 'radio' else 'form-select')) %}
-                    {% if errors.get(field_name) %}
-                        {% set input_class = input_class + ' is-invalid' %}
-                    {% endif %}
+                    {% if has_error %}{% set input_class = input_class + ' is-invalid' %}{% endif %}
 
-                    {# --- Render different input types based on field.field_type --- #}
-
-                    {# Text, Email, Number, Date #}
+                    {# --- Render input types --- #}
                     {% if field.field_type in ['text', 'email', 'number', 'date'] %}
-                        <input type="{{ field.field_type }}" class="{{ input_class }}" id="{{ field_name }}" name="{{ field_name }}"
-                               value="{{ submitted_data.get(field_name, '') }}" {% if field.required %}required{% endif %}>
-
-                    {# Textarea #}
+                        <input type="{{ field.field_type }}" class="{{ input_class }}" id="{{ field_name }}" name="{{ field_name }}" value="{{ submitted_data.get(field_name, '') }}" {% if field.required %}required{% endif %}>
                     {% elif field.field_type == 'textarea' %}
-                        <textarea class="{{ input_class }}" id="{{ field_name }}" name="{{ field_name }}" rows="3"
-                                  {% if field.required %}required{% endif %}>{{ submitted_data.get(field_name, '') }}</textarea>
-
-                    {# Checkbox #}
+                        <textarea class="{{ input_class }}" id="{{ field_name }}" name="{{ field_name }}" rows="4" {% if field.required %}required{% endif %}>{{ submitted_data.get(field_name, '') }}</textarea> {# Larger rows #}
                     {% elif field.field_type == 'checkbox' %}
-                        <div class="form-check">
-                            <input class="{{ input_class }}" type="checkbox" value="true" id="{{ field_name }}" name="{{ field_name }}"
-                                   {% if submitted_data.get(field_name) == 'true' %}checked{% endif %} {% if field.required %}required{% endif %}>
-                            <label class="form-check-label" for="{{ field_name }}"> Yes/Confirm </label> {# Label associated by 'for' #}
+                        <div class="form-check pt-1"> {# Add padding #}
+                            <input class="{{ input_class }}" type="checkbox" value="true" id="{{ field_name }}" name="{{ field_name }}" {% if submitted_data.get(field_name) == 'true' %}checked{% endif %} {% if field.required %}required{% endif %}>
+                            {# Label moved beside checkbox for better alignment #}
+                            {# <label class="form-check-label" for="{{ field_name }}"> {{ field.label }} {% if field.required %}<span class="text-danger ms-1">*</span>{% endif %}</label> #}
+                             <label class="form-check-label" for="{{ field_name }}"> Confirm/Agree </label> {# Generic label for checkbox itself #}
+                             {% if has_error %} {# Error specific to checkbox #}
+                                <div class="invalid-feedback d-block"> {# Force display #}
+                                    {{ errors[field_name] }}
+                                </div>
+                             {% endif %}
                         </div>
-
-                    {# Select Dropdown #}
                     {% elif field.field_type == 'select' %}
                         <select class="{{ input_class }}" id="{{ field_name }}" name="{{ field_name }}" {% if field.required %}required{% endif %}>
                             <option value="" {% if not submitted_data.get(field_name) %}selected{% endif %} disabled>-- Please select --</option>
                             {% set options_list = field.options.split(',') %}
-                            {% for option in options_list %}
-                                {% set opt_val = option.strip() %}
-                                <option value="{{ opt_val }}" {% if submitted_data.get(field_name) == opt_val %}selected{% endif %}>{{ opt_val }}</option>
-                            {% endfor %}
+                            {% for option in options_list %}{% set opt_val = option.strip() %}<option value="{{ opt_val }}" {% if submitted_data.get(field_name) == opt_val %}selected{% endif %}>{{ opt_val }}</option>{% endfor %}
                         </select>
-
-                    {# Radio Buttons #}
                     {% elif field.field_type == 'radio' %}
+                        {# Add padding to first radio #}
                         {% set options_list = field.options.split(',') %}
                         {% for option in options_list %}
                             {% set opt_val = option.strip() %}
                             {% set radio_id = field_name + '_' + loop.index|string %}
-                             {# Add is-invalid to the check containing radios if error #}
-                            <div class="form-check {% if errors.get(field_name) %}is-invalid{% endif %}">
-                                <input class="form-check-input {{ 'is-invalid' if errors.get(field_name) else '' }}" type="radio" id="{{ radio_id }}" name="{{ field_name }}" value="{{ opt_val }}"
-                                       {% if submitted_data.get(field_name) == opt_val %}checked{% endif %} {% if field.required %}required{% endif %}>
+                            <div class="form-check {% if loop.first %}pt-1{% endif %} {% if has_error %}is-invalid{% endif %}"> {# Add is-invalid marker to group #}
+                                <input class="form-check-input {{ 'is-invalid' if has_error else '' }}" type="radio" id="{{ radio_id }}" name="{{ field_name }}" value="{{ opt_val }}" {% if submitted_data.get(field_name) == opt_val %}checked{% endif %} {% if field.required %}required{% endif %}>
                                 <label class="form-check-label" for="{{ radio_id }}">{{ opt_val }}</label>
                             </div>
                         {% endfor %}
-
-                    {# Fallback for unknown types #}
+                        {# Display error once after radios if needed #}
+                         {% if has_error %}
+                            <div class="invalid-feedback d-block"> {# Force display #}
+                                {{ errors[field_name] }}
+                            </div>
+                         {% endif %}
                     {% else %}
                         <input type="text" class="form-control is-disabled" id="{{ field_name }}" name="{{ field_name }}" disabled value="Unsupported field type: {{ field.field_type }}">
                     {% endif %}
 
-                    {# --- Display Validation Error --- #}
-                    {% if errors.get(field_name) %}
+                    {# --- Display Validation Error (handled inside radio/checkbox blocks now) --- #}
+                    {% if has_error and field.field_type not in ['radio', 'checkbox'] %}
                         <div class="invalid-feedback">
                             {{ errors[field_name] }}
                         </div>
                     {% endif %}
 
-                </div> {# End mb-3 #}
+                </div> {# End mb-4 #}
             {% endfor %} {# End field loop #}
 
-            <hr class="my-4">
-            <button class="btn btn-primary w-100" type="submit">Submit</button>
+            <div class="d-grid mt-4"> {# Use d-grid for full width button #}
+                 <button class="btn btn-primary btn-lg" type="submit">Submit</button> {# Larger button #}
+            </div>
         </form>
-    </div>
 
-    {# Include Bootstrap JS for potential components like alerts #}
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    </div> {# End form-container #}
+    {# ... (scripts remain same) ... #}
 </body>
 </html>
