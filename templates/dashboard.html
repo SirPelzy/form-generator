@@ -1,0 +1,167 @@
+{# templates/dashboard.html #}
+
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Dashboard</h1>
+    <a href="{{ url_for('create_form') }}" class="btn btn-primary">Create New Form</a>
+</div>
+<hr>
+
+<h2>Your Forms</h2>
+
+{% if user_forms %}
+  <div class="list-group">
+    {# Loop through the forms passed from the dashboard route #}
+    {% for form in user_forms %}
+      <div class="list-group-item list-group-item-action flex-column align-items-start mb-2 shadow-sm">
+        {# --- Form Title and Info --- #}
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1"><a href="{{ url_for('edit_form', form_id=form.id) }}" class="text-decoration-none">{{ form.title }}</a></h5>
+          <small class="text-muted">Created: {{ form.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+        </div>
+        <p class="mb-1">{{ form.description or 'No description provided.' }}</p>
+        <small class="text-muted">Unique Key: <code class="user-select-all">{{ form.unique_key }}</code></small>
+
+        {# --- Action Buttons --- #}
+        <div class="mt-2">
+            {# Link to Edit Fields page #}
+            <a href="{{ url_for('edit_form', form_id=form.id) }}" class="btn btn-sm btn-outline-secondary me-2">Manage Fields</a>
+
+            {# Link to View Submissions page (from previous step) #}
+            <a href="{{ url_for('view_submissions', form_id=form.id) }}" class="btn btn-sm btn-outline-info me-2">View Submissions</a>
+
+            {# Embed/Share Button - Triggers Modal #}
+            <button type="button" class="btn btn-sm btn-outline-success me-2" data-bs-toggle="modal" data-bs-target="#embedModal_{{ form.id }}">
+              Embed / Share
+            </button>
+
+            {# Delete Button - Now inside a form #}
+            <form action="{{ url_for('delete_form', form_id=form.id) }}" method="POST" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {# If using Flask-WTF globally, add CSRF token here #}
+                <button type="submit" class="btn btn-sm btn-outline-danger"
+                        onclick="return confirm('Are you sure you want to delete the form \'{{ form.title }}\' and all its submissions? This cannot be undone.');">
+                    Delete
+                </button>
+            </form>
+        </div>{# End Action Buttons #}
+
+      </div>{# End list-group-item #}
+
+      {# --- Embed Modal Definition (INSIDE the loop for unique content) --- #}
+      <div class="modal fade" id="embedModal_{{ form.id }}" tabindex="-1" aria-labelledby="embedModalLabel_{{ form.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="embedModalLabel_{{ form.id }}">Embed Form: {{ form.title }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p>Copy the HTML code below and paste it into your website where you want the form to appear.</p>
+
+              {# Generate the full public URL for this specific form #}
+              {% set public_form_url = url_for('public_form', form_key=form.unique_key, _external=True) %}
+              {% set iframe_code = '<iframe src="' + public_form_url + '" width="100%" height="600" frameborder="0" title="' + form.title + '">Loading...' + '</iframe>' %}
+
+              <div class="mb-3">
+                  <label for="embed-code-area_{{ form.id }}" class="form-label">Embed Code (Iframe):</label>
+                  <pre><code id="embed-code-area_{{ form.id }}" class="d-block p-3 bg-light border rounded" style="white-space: pre-wrap; word-break: break-all;">{{ iframe_code | escape }}</code></pre>
+              </div>
+
+              {# Copy button specific to this modal #}
+              <button id="copy-button_{{ form.id }}" class="btn btn-outline-secondary btn-sm" onclick="copyEmbedCode('embed-code-area_{{ form.id }}', this)">
+                  Copy Code
+              </button>
+              <small class="ms-2 text-muted">Adjust `width` and `height` as needed.</small>
+
+              <hr>
+              <p class="mt-3">Or share this direct link:</p>
+                <div class="input-group mb-3">
+                  {# Add unique ID to the input field #}
+                  <input type="text" class="form-control" value="{{ public_form_url }}" readonly id="direct-link-input_{{ form.id }}">
+                  {# Add the copy button, calling a new JS function #}
+                  <button class="btn btn-outline-secondary" type="button" id="copy-link-button_{{ form.id }}" onclick="copyDirectLink('direct-link-input_{{ form.id }}', this)">
+                      Copy
+                  </button>
+              </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {# --- End Embed Modal Definition --- #}
+
+    {% endfor %}{# End of the form loop #}
+  </div>{# End list-group #}
+
+{% else %}
+  {# Message if user has no forms yet #}
+  <div class="alert alert-info" role="alert">
+      You haven't created any forms yet. <a href="{{ url_for('create_form') }}" class="alert-link">Create one now!</a>
+  </div>
+{% endif %}
+
+{# --- JavaScript for Copy Button (Place once, before {% endblock %}) --- #}
+<script>
+function copyEmbedCode(textAreaId, buttonElement) {
+    // Get the code element using the unique ID passed to the function
+    const codeElement = document.getElementById(textAreaId);
+    // Get the text content
+    const codeToCopy = codeElement.textContent || codeElement.innerText;
+
+    // Use the Clipboard API
+    navigator.clipboard.writeText(codeToCopy).then(() => {
+        // Success feedback using the specific button passed to the function
+        const originalText = buttonElement.innerText;
+        buttonElement.innerText = 'Copied!';
+        buttonElement.classList.add('btn-success');
+        buttonElement.classList.remove('btn-outline-secondary');
+
+        // Reset button after 2 seconds
+        setTimeout(() => {
+            buttonElement.innerText = originalText;
+            buttonElement.classList.remove('btn-success');
+            buttonElement.classList.add('btn-outline-secondary');
+        }, 2000);
+    }).catch(err => {
+        // Error feedback
+        console.error('Failed to copy embed code for ID ' + textAreaId + ':', err);
+        alert('Could not copy code automatically. Please select and copy manually.');
+    });
+}
+
+// --- NEW FUNCTION START ---
+function copyDirectLink(inputId, buttonElement) {
+    // Get the input element using the unique ID passed to the function
+    const inputElement = document.getElementById(inputId);
+    // Get the value from the input field
+    const linkToCopy = inputElement.value;
+
+    // Use the Clipboard API
+    navigator.clipboard.writeText(linkToCopy).then(() => {
+        // Success feedback using the specific button passed to the function
+        const originalText = buttonElement.innerText;
+        buttonElement.innerText = 'Copied!';
+        buttonElement.classList.add('btn-success');
+        buttonElement.classList.remove('btn-outline-secondary');
+
+        // Reset button after 2 seconds
+        setTimeout(() => {
+            buttonElement.innerText = originalText;
+            buttonElement.classList.remove('btn-success');
+            buttonElement.classList.add('btn-outline-secondary');
+        }, 2000);
+    }).catch(err => {
+        // Error feedback
+        console.error('Failed to copy direct link for ID ' + inputId + ':', err);
+        alert('Could not copy link automatically. Please try selecting manually.');
+    });
+}
+</script>
+
+{% endblock content %}
