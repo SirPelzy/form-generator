@@ -61,11 +61,10 @@ ALLOWED_FIELD_TYPES = [
 @app.route('/')
 @app.route('/home')
 def home():
-    # If user is already logged in, send them to the dashboard
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    # Otherwise, show the landing page
-    return render_template('home.html', title='Home')
+    # Pass a more descriptive title for SEO
+    return render_template('home.html', title='Easy Online Form Builder - Create Free Web Forms')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
