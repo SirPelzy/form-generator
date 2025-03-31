@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Create a New Form</h2>
+    <hr>
+
+    <form method="POST" action="{{ url_for('create_form') }}">
+        <div class="mb-3">
+            <label for="form_title" class="form-label">Form Title <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="form_title" name="form_title" required placeholder="e.g., Contact Us, Feedback Survey" value="{{ current_title or '' }}">
+            </div>
+
+        <div class="mb-3">
+            <label for="form_description" class="form-label">Description (Optional)</label>
+            <textarea class="form-control" id="form_description" name="form_description" rows="3" placeholder="Add a short description for your form users">{{ current_description or '' }}</textarea>
+            </div>
+
+        <button type="submit" class="btn btn-primary">Create Form</button>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
