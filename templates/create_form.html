@@ -7,6 +7,7 @@
     <hr>
 
     <form method="POST" action="{{ url_for('create_form') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mb-3">
             <label for="form_title" class="form-label">Form Title <span class="text-danger">*</span></label>
             <input type="text" class="form-control" id="form_title" name="form_title" required placeholder="e.g., Contact Us, Feedback Survey" value="{{ current_title or '' }}">
