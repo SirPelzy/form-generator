@@ -2,62 +2,57 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    {# Display Form Info #}
-    <div class="pb-2 mb-3 border-bottom">
-        <h2>{{ form.title }}</h2>
-        {% if form.description %}
-            <p class="text-muted">{{ form.description }}</p>
-        {% endif %}
-        <p><small><strong>Unique Key:</strong> <code class="user-select-all">{{ form.unique_key }}</code> | <strong>Created:</strong> {{ form.created_at.strftime('%Y-%m-%d') }}</small></p>
+<div class="content-section"> {# Added consistent padding #}
+    {# Form Info Header #}
+    <div class="pb-2 mb-4 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Edit Form: {{ form.title }}</h2>
+            {% if form.description %}
+                <p class="text-muted mb-1">{{ form.description }}</p>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-secondary">&laquo; Back to Dashboard</a>
     </div>
 
-    {# Display Flash Messages (handled by layout.html now) #}
-
-    {# --- Add New Field Form --- #}
+    {# --- Add New Field Form in a Card --- #}
     <div class="card mb-4 shadow-sm">
-        <div class="card-header">
-            <h4 class="my-0 fw-normal">Add New Field</h4>
-        </div>
+        <div class="card-header">Add New Field</div>
         <div class="card-body">
             <form method="POST" action="{{ url_for('edit_form', form_id=form.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="row g-3">
+                {# Use row/col for layout like before, ensure standard form classes #}
+                <div class="row g-3 mb-3 align-items-end">
                     <div class="col-md-4">
                         <label for="field_label" class="form-label">Field Label <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="field_label" name="field_label" required placeholder="e.g., Your Name, Subject">
+                        <input type="text" class="form-control" id="field_label" name="field_label" required>
                     </div>
                     <div class="col-md-3">
                         <label for="field_type" class="form-label">Field Type <span class="text-danger">*</span></label>
                         <select class="form-select" id="field_type" name="field_type" required>
-                            <option value="" selected disabled>-- Select Type --</option>
-                            {% for type in allowed_field_types %}
-                                <option value="{{ type }}">{{ type | capitalize }}</option>
-                            {% endfor %}
+                            <option value="" selected disabled>-- Select --</option>
+                            {% for type in allowed_field_types %}<option value="{{ type }}">{{ type|capitalize }}</option>{% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-3 align-self-center pt-3">
-                        {# Options field - basic for now, show only for relevant types (JS needed for dynamic show/hide) #}
-                        <label for="field_options" class="form-label">Options <small>(for Select/Radio, comma-separated)</small></label>
-                        <input type="text" class="form-control form-control-sm" id="field_options" name="field_options" placeholder="Option 1,Option 2">
+                    <div class="col-md-3">
+                        <label for="field_options" class="form-label">Options <small>(comma-separated)</small></label>
+                        <input type="text" class="form-control" id="field_options" name="field_options">
                     </div>
-                    <div class="col-md-2 align-self-end pb-2">
-                        <div class="form-check">
+                    <div class="col-md-auto">
+                        <div class="form-check mb-1">
                             <input class="form-check-input" type="checkbox" id="field_required" name="field_required" value="true">
-                            <label class="form-check-label" for="field_required">
-                                Required?
-                            </label>
+                            <label class="form-check-label" for="field_required">Required?</label>
                         </div>
                     </div>
+                    <div class="col-md-auto">
+                        <button type="submit" class="btn btn-success">Add Field</button>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-success mt-3">Add Field</button>
             </form>
         </div>
     </div>
 
-
     {# --- List Existing Fields --- #}
-    <h3 class="mb-3">Existing Fields</h3>
+    <h3 class="h4 mb-3">Existing Fields</h3>
     {% if fields %}
         <ul class="list-group">
             {% for field in fields %}
@@ -65,98 +60,25 @@
                     <div>
                         <strong>{{ field.label }}</strong>
                         <span class="badge bg-secondary rounded-pill ms-2">{{ field.field_type | capitalize }}</span>
-                        {% if field.required %}
-                            <span class="badge bg-warning text-dark rounded-pill ms-1">Required</span>
-                        {% endif %}
-                        {% if field.options %}
-                            <small class="d-block text-muted">Options: {{ field.options }}</small>
-                        {% endif %}
+                        {% if field.required %}<span class="badge bg-warning text-dark rounded-pill ms-1">Required</span>{% endif %}
+                        {% if field.options %}<small class="d-block text-muted mt-1">Options: {{ field.options }}</small>{% endif %}
                     </div>
-                    <div>
-                        {# Edit Button #}
-                        <a href="{{ url_for('edit_field', field_id=field.id) }}" class="btn btn-outline-primary btn-sm me-2">Edit</a>
-
-                        {# Delete Field Button (within its own form) #}
+                    <div class="field-actions"> {# Wrap buttons #}
+                        <a href="{{ url_for('edit_field', field_id=field.id) }}" class="btn btn-outline-primary btn-sm me-1">Edit</a>
                         <form action="{{ url_for('delete_field', field_id=field.id) }}" method="POST" style="display: inline;">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-outline-danger btn-sm"
-                                    onclick="return confirm('Are you sure you want to delete the field \'{{ field.label }}\'?');">
-                                Delete
-                            </button>
+                            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete field \'{{ field.label }}\'?');">Delete</button>
                         </form>
                     </div>
                 </li>
             {% endfor %}
         </ul>
     {% else %}
-        <div class="alert alert-secondary" role="alert">
-          No fields have been added to this form yet. Use the form above to add one.
-        </div>
+        <div class="alert alert-secondary" role="alert">No fields added yet.</div>
     {% endif %}
 
-    {# --- Embed Form Section --- #}
-    <div class="card mt-4 mb-4 shadow-sm">
-        <div class="card-header">
-            <h4 class="my-0 fw-normal">Embed Your Form</h4>
-        </div>
-        <div class="card-body">
-            <p>Copy the HTML code below and paste it into your website where you want the form to appear.</p>
+    {# --- Embed Modal Trigger (Keep Embed Button styling consistent) --- #}
+    {# (If you want embed section here too, copy from dashboard, or link back) #}
 
-            {# Generate the full public URL for the form #}
-            {% set public_form_url = url_for('public_form', form_key=form.unique_key, _external=True) %}
-
-            {# Define the iframe code #}
-            {% set iframe_code = '<iframe src="' + public_form_url + '" width="100%" height="600" frameborder="0" title="' + form.title + '">Loading...' + '</iframe>' %}
-
-            <div class="mb-3">
-                <label for="embed-code-area" class="form-label">Embed Code:</label>
-                {# Use <pre><code> for better code display and selection #}
-                <pre><code id="embed-code-area" class="d-block p-3 bg-light border rounded" style="white-space: pre-wrap; word-break: break-all;">{{ iframe_code | escape }}</code></pre>
-                 {# Note: | escape is important here in case form title has HTML chars #}
-            </div>
-
-            <button id="copy-button" class="btn btn-outline-secondary" onclick="copyEmbedCode()">
-                Copy Code
-            </button>
-             <small class="ms-2 text-muted">You can adjust the `width` and `height` attributes as needed.</small>
-        </div>
-    </div>
-
-    {# --- Add JavaScript for Copy Button (Place before {% endblock %}) --- #}
-    <script>
-    function copyEmbedCode() {
-        // Get the code element
-        const codeElement = document.getElementById('embed-code-area');
-        // Get the text content
-        const codeToCopy = codeElement.textContent || codeElement.innerText;
-
-        // Use the Clipboard API
-        navigator.clipboard.writeText(codeToCopy).then(() => {
-            // Success feedback
-            const copyButton = document.getElementById('copy-button');
-            const originalText = copyButton.innerText;
-            copyButton.innerText = 'Copied!';
-            copyButton.classList.add('btn-success'); // Optional: change button style
-            copyButton.classList.remove('btn-outline-secondary');
-
-            // Reset button after 2 seconds
-            setTimeout(() => {
-                copyButton.innerText = originalText;
-                copyButton.classList.remove('btn-success');
-                copyButton.classList.add('btn-outline-secondary');
-            }, 2000);
-        }).catch(err => {
-            // Error feedback
-            console.error('Failed to copy embed code: ', err);
-            alert('Could not copy code automatically. Please select and copy manually.');
-        });
-    }
-    </script>
-                    
-    {# --- Back Button --- #}
-    <div class="mt-4">
-     <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">&laquo; Back to Dashboard</a>
-    </div>
-
-</div> {# End Container #}
+</div> {# End content-section #}
 {% endblock %}
