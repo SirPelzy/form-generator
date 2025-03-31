@@ -2,24 +2,29 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Create a New Form</h2>
-    <hr>
+<div class="content-section"> {# Added consistent padding #}
+    <div class="col-md-8 col-lg-6 mx-auto"> {# Center and constrain width #}
+        <h2 class="mb-4">Create a New Form</h2>
+        {# Removed <hr> #}
 
-    <form method="POST" action="{{ url_for('create_form') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="mb-3">
-            <label for="form_title" class="form-label">Form Title <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="form_title" name="form_title" required placeholder="e.g., Contact Us, Feedback Survey" value="{{ current_title or '' }}">
+        <form method="POST" action="{{ url_for('create_form') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label for="form_title" class="form-label">Form Title <span class="text-danger">*</span></label>
+                <input type="text" class="form-control {% if errors and errors.form_title %}is-invalid{% endif %}" id="form_title" name="form_title" required placeholder="e.g., Contact Us, Feedback Survey" value="{{ current_title or '' }}">
+                 {% if errors and errors.form_title %}
+                    <div class="invalid-feedback">{{ errors.form_title }}</div>
+                 {% endif %}
             </div>
-
-        <div class="mb-3">
-            <label for="form_description" class="form-label">Description (Optional)</label>
-            <textarea class="form-control" id="form_description" name="form_description" rows="3" placeholder="Add a short description for your form users">{{ current_description or '' }}</textarea>
+            <div class="mb-4"> {# Increased margin bottom #}
+                <label for="form_description" class="form-label">Description (Optional)</label>
+                <textarea class="form-control" id="form_description" name="form_description" rows="3" placeholder="Add a short description for your form users">{{ current_description or '' }}</textarea>
             </div>
-
-        <button type="submit" class="btn btn-primary">Create Form</button>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
-    </form>
-</div>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start"> {# Button alignment #}
+                <button type="submit" class="btn btn-primary">Create Form</button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div> {# End col #}
+</div> {# End content-section #}
 {% endblock %}
