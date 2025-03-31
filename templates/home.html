@@ -1,5 +1,59 @@
 {% extends "layout.html" %}
+
 {% block content %}
-    <h1>Welcome to the Form Generator!</h1>
-    <p>Create custom forms easily.</p>
+
+{# --- Hero Section --- #}
+<section class="hero-section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <h1>Effortless Web Forms, Instantly.</h1>
+        <p class="lead">
+          Build and embed beautiful, responsive forms on your website in minutes
+          to capture leads, feedback, and registrations. No code required.
+        </p>
+        {# Link to registration page #}
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Get Started for Free</a>
+        {# Optional: Add a secondary button later #}
+        {# <a href="#features" class="btn btn-outline-secondary btn-lg ms-2">Learn More</a> #}
+      </div>
+    </div>
+    {# Optional: Add a clean visual/screenshot here later #}
+    </div>
+</section>
+
+{# --- Features Section --- #}
+<section id="features" class="features-section">
+  <div class="container">
+    <div class="row text-center g-4">
+      {# Feature 1 #}
+      <div class="col-md-4">
+        <div class="feature-icon">📝</div> {# Placeholder Icon #}
+        <h4>Intuitive Builder</h4>
+        <p>Easily create your perfect form using simple controls.</p>
+      </div>
+      {# Feature 2 #}
+      <div class="col-md-4">
+        <div class="feature-icon">💻</div> {# Placeholder Icon #}
+        <h4>Embed Anywhere</h4>
+        <p>Copy-paste a simple snippet to add forms to any website.</p>
+      </div>
+      {# Feature 3 #}
+      <div class="col-md-4">
+        <div class="feature-icon">📊</div> {# Placeholder Icon #}
+        <h4>Simple Dashboard</h4>
+        <p>View and manage all your form submissions clearly in one place.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# --- Final Call to Action (CTA) Section --- #}
+<section class="cta-section">
+    <div class="container">
+        <h2>Ready to start collecting responses?</h2>
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Create Your First Form Now</a>
+    </div>
+</section>
+
 {% endblock content %}
