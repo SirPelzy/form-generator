@@ -14,24 +14,24 @@
     {% if user_forms %}
       <div class="list-group">
         {% for form in user_forms %}
-          {# Use list-group-item for each form #}
-          <div class="list-group-item list-group-item-action_ flex-column align-items-start p-3 mb-3 border rounded shadow-sm"> {# Added padding, margin, border, shadow #}
+          {# --- Form Item Display --- #}
+          <div class="list-group-item list-group-item-action_ flex-column align-items-start p-3 mb-3 border rounded shadow-sm"> {# Using action_ to disable default link style if stretched-link is used, or remove it #}
             <div class="d-flex w-100 justify-content-between mb-2"> {# Added margin-bottom #}
-              <h5 class="mb-1"><a href="{{ url_for('edit_form', form_id=form.id) }}" class="text-decoration-none stretched-link">{{ form.title }}</a></h5> {# Stretched-link makes whole item clickable #}
+              {# Consider removing stretched-link if causing issues with buttons, use simple link #}
+              <h5 class="mb-1"><a href="{{ url_for('edit_form', form_id=form.id) }}" class="text-decoration-none text-dark fw-bold">{{ form.title }}</a></h5>
               <small class="text-muted flex-shrink-0 ms-3">{{ form.created_at.strftime('%Y-%m-%d') }}</small> {# Short date, shrink/margin #}
             </div>
             <p class="mb-2 text-muted small">{{ form.description or 'No description provided.' }}</p> {# Smaller text for description #}
-            {# Removed unique key display for cleaner look #}
-            {# <small class="text-muted">Unique Key: <code class="user-select-all">{{ form.unique_key }}</code></small> #}
-            <div class="mt-2 action-buttons"> {# Add class to potentially hide on item hover later #}
-                {# Consistent small outline buttons #}
-                <a href="{{ url_for('edit_form', form_id=form.id) }}" class="btn btn-sm btn-outline-secondary me-1 z-1 position-relative">Manage Fields</a> {# z-1 needed with stretched-link #}
-                <a href="{{ url_for('view_submissions', form_id=form.id) }}" class="btn btn-sm btn-outline-info me-1 z-1 position-relative">View Submissions</a>
-                <button type="button" class="btn btn-sm btn-outline-success me-1 z-1 position-relative" data-bs-toggle="modal" data-bs-target="#embedModal_{{ form.id }}">
+
+            <div class="mt-2 action-buttons"> {# Buttons group #}
+                {# Use position-relative z-1 on buttons ONLY if using stretched-link on the H5 anchor above #}
+                <a href="{{ url_for('edit_form', form_id=form.id) }}" class="btn btn-sm btn-outline-secondary me-1">Manage Fields</a>
+                <a href="{{ url_for('view_submissions', form_id=form.id) }}" class="btn btn-sm btn-outline-info me-1">View Submissions</a>
+                <button type="button" class="btn btn-sm btn-outline-success me-1" data-bs-toggle="modal" data-bs-target="#embedModal_{{ form.id }}">
                   Embed / Share
                 </button>
                 {# Delete Button Form #}
-                <form action="{{ url_for('delete_form', form_id=form.id) }}" method="POST" style="display: inline;" class="z-1 position-relative">
+                <form action="{{ url_for('delete_form', form_id=form.id) }}" method="POST" style="display: inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-sm btn-outline-danger"
                             onclick="return confirm('Are you sure you want to delete the form \'{{ form.title }}\' and all its submissions? This cannot be undone.');">
@@ -41,11 +41,53 @@
             </div>
           </div>{# End list-group-item #}
 
-          {# --- Embed Modal Definition (Keep as is from previous step) --- #}
-          <div class="modal fade" id="embedModal_{{ form.id }}" ... >
-              {# ... Modal content ... #}
+          {# --- START: Full Embed Modal Definition (Inside the loop) --- #}
+          <div class="modal fade" id="embedModal_{{ form.id }}" tabindex="-1" aria-labelledby="embedModalLabel_{{ form.id }}" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="embedModalLabel_{{ form.id }}">Embed Form: {{ form.title }}</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  {# --- START: Modal Body Content --- #}
+                  <p>Copy the HTML code below and paste it into your website where you want the form to appear.</p>
+
+                  {# Generate the full public URL for this specific form #}
+                  {% set public_form_url = url_for('public_form', form_key=form.unique_key, _external=True) %}
+                  {% set iframe_code = '<iframe src="' + public_form_url + '" width="100%" height="600" frameborder="0" title="' + form.title + '">Loading...' + '</iframe>' %}
+
+                  {# Display Iframe Code #}
+                  <div class="mb-3">
+                      <label for="embed-code-area_{{ form.id }}" class="form-label">Embed Code (Iframe):</label>
+                      <pre><code id="embed-code-area_{{ form.id }}" class="d-block p-3 bg-light border rounded" style="white-space: pre-wrap; word-break: break-all;">{{ iframe_code | escape }}</code></pre>
+                  </div>
+
+                  {# Copy Iframe Code Button #}
+                  <button id="copy-button_{{ form.id }}" class="btn btn-outline-secondary btn-sm" onclick="copyEmbedCode('embed-code-area_{{ form.id }}', this)">
+                      Copy Code
+                  </button>
+                  <small class="ms-2 text-muted">Adjust `width` and `height` as needed.</small>
+
+                  <hr>
+
+                  {# Display Direct Link #}
+                  <p class="mt-3">Or share this direct link:</p>
+                  <div class="input-group mb-3">
+                      <input type="text" class="form-control" value="{{ public_form_url }}" readonly id="direct-link-input_{{ form.id }}">
+                      <button class="btn btn-outline-secondary" type="button" id="copy-link-button_{{ form.id }}" onclick="copyDirectLink('direct-link-input_{{ form.id }}', this)">
+                          Copy
+                      </button>
+                  </div>
+                  {# --- END: Modal Body Content --- #}
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
           </div>
-          {# --- End Embed Modal Definition --- #}
+          {# --- END: Full Embed Modal Definition --- #}
 
         {% endfor %}{# End of the form loop #}
       </div>{# End list-group #}
@@ -58,10 +100,45 @@
 
 </div> {# End content-section #}
 
-{# --- JavaScript for Copy Button (Keep as is from previous step) --- #}
+{# --- JavaScript for Copy Buttons (Ensure this is present) --- #}
 <script>
-function copyEmbedCode(textAreaId, buttonElement) { /* ... */ }
-function copyDirectLink(inputId, buttonElement) { /* ... */ }
+function copyEmbedCode(textAreaId, buttonElement) {
+    const codeElement = document.getElementById(textAreaId);
+    const codeToCopy = codeElement.textContent || codeElement.innerText;
+    navigator.clipboard.writeText(codeToCopy).then(() => {
+        const originalText = buttonElement.innerText;
+        buttonElement.innerText = 'Copied!';
+        buttonElement.classList.add('btn-success');
+        buttonElement.classList.remove('btn-outline-secondary');
+        setTimeout(() => {
+            buttonElement.innerText = originalText;
+            buttonElement.classList.remove('btn-success');
+            buttonElement.classList.add('btn-outline-secondary');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy embed code for ID ' + textAreaId + ':', err);
+        alert('Could not copy code automatically. Please select and copy manually.');
+    });
+}
+
+function copyDirectLink(inputId, buttonElement) {
+    const inputElement = document.getElementById(inputId);
+    const linkToCopy = inputElement.value;
+    navigator.clipboard.writeText(linkToCopy).then(() => {
+        const originalText = buttonElement.innerText;
+        buttonElement.innerText = 'Copied!';
+        buttonElement.classList.add('btn-success');
+        buttonElement.classList.remove('btn-outline-secondary');
+        setTimeout(() => {
+            buttonElement.innerText = originalText;
+            buttonElement.classList.remove('btn-success');
+            buttonElement.classList.add('btn-outline-secondary');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy direct link for ID ' + inputId + ':', err);
+        alert('Could not copy link automatically. Please try selecting manually.');
+    });
+}
 </script>
 
 {% endblock content %}
