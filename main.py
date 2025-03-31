@@ -55,6 +55,34 @@ ALLOWED_FIELD_TYPES = [
     'text', 'email', 'textarea', 'number', 'date',
     'checkbox', 'radio', 'select'
 ]
+
+# !!!!!! TEMPORARY ROUTE FOR DB SETUP - REMOVE IMMEDIATELY AFTER USE !!!!!!
+# Choose and type your own secret, hard-to-guess path here.
+# Use a mix of letters and numbers, make it long. Avoid simple names.
+# Example (REPLACE THIS WITH YOUR OWN RANDOM STRING):
+SECRET_DB_SETUP_PATH = 'create-tables-now-a3b7d9c1e8f5g2h4'
+
+@app.route(f'/{SECRET_DB_SETUP_PATH}')
+def temp_create_tables():
+    # You could add extra security later like checking for a query param secret
+    print(f"ACCESSING TEMPORARY DB SETUP ROUTE: /create-tables-now-a3b7d9c1e8f5g2h4")
+    try:
+        # Ensure commands run within Flask's application context
+        with app.app_context():
+             print("App context active. Executing db.create_all()...")
+             # Make sure 'db' is the imported SQLAlchemy instance from models.py
+             # It should be global, but add import just in case of scope issues inside function
+             from models import db
+             db.create_all() # This creates tables based on your models.py definitions
+             print("db.create_all() command finished.")
+        # Return a success message to the browser upon completion
+        return f"OK: db.create_all() executed via /{SECRET_DB_SETUP_PATH}. Remove this route from main.py and redeploy NOW.", 200
+    except Exception as e:
+        print(f"ERROR during temporary DB setup route: {e}")
+        # Return an error message to the browser if something goes wrong
+        return f"Error during DB setup: {e}", 500
+# !!!!!! END OF TEMPORARY ROUTE - REMEMBER TO REMOVE !!!!!!
+
 # --- Routes ---
 
 @app.route('/')
