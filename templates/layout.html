@@ -42,14 +42,16 @@
               </li>
               <li class="nav-item">
               <a class="nav-link" href="{{ url_for('logout') }}">Logout</a> </li>
-            {% else %}
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+           {% else %}
+              <li class="nav-item me-2"> {# Added margin-end for spacing #}
+                  {# Simple text link for Login #}
+                  <a class="nav-link login-link" href="{{ url_for('login') }}">Log in</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                  {# Button with custom dark style for Sign Up #}
+                  <a class="btn btn-sm btn-signup" href="{{ url_for('register') }}">Sign up</a>
               </li>
-            {% endif %}
+              {% endif %}
           </ul>
         </div>
       </div>
