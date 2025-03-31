@@ -55,6 +55,56 @@ body {
   color: var(--text-on-primary);
 }
 
+/* --- General UI Elements --- */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-color); /* Ensure headings use main text color or accent */
+    /* Consider using --accent-color for h1/h2 if desired */
+}
+/* Style secondary buttons using the secondary color */
+.btn-secondary {
+    background-color: var(--secondary-color); /* #b2b09b */
+    border-color: var(--secondary-color);
+    color: var(--text-color); /* Dark text on light button */
+}
+.btn-secondary:hover,
+.btn-secondary:focus,
+.btn-secondary:active {
+    background-color: #a19f8a; /* Slightly darker shade */
+    border-color: #a19f8a;
+    color: var(--text-color);
+}
+
+/* Consistent Card Styling (Optional) */
+.card {
+    border: 1px solid #dee2e6; /* Default Bootstrap border */
+    /* border: none; */ /* Alternative: remove border */
+    /* box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); */ /* Subtle shadow */
+}
+.card-header {
+    background-color: #e9ecef; /* Light grey header */
+    /* background-color: transparent; */ /* Alternative: no header background */
+    border-bottom: 1px solid #dee2e6;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+/* Consistent Table Styling */
+.table {
+    border-color: #e0e0e0; /* Lighter border for tables */
+}
+.table thead th {
+    background-color: #f8f9fa; /* Very light grey for table header */
+    border-bottom-width: 2px; /* Emphasize header bottom border */
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+/* --- Section Padding --- */
+/* Apply consistent padding to main content sections */
+.content-section {
+    padding: 3rem 0;
+}
+
 /* --- Hero Section --- */
 .hero-section {
   padding: 6rem 0; /* Adjust padding */
