@@ -1,0 +1,11 @@
+flask>=3.1.0
+flask-sqlalchemy>=3.1.1
+flask-login>=0.6.3
+flask-bcrypt>=1.0.1
+flask-wtf>=1.2.2
+wtforms>=3.2.1
+gunicorn>=20.1.0  # Production WSGI server
+psycopg2-binary>=2.9.5 # PostgreSQL driver
+Flask[cli]>=3.1.0 # Needed for running db commands in Railway shell
+email-validator>=1.1 # Using >=1.1 as it's commonly used with WTForms
+Flask-Limiter>=3.0 
