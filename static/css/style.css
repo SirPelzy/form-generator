@@ -1,95 +1,100 @@
 /* static/css/style.css */
-
-/* Define color palette using CSS Variables */
 :root {
   --bg-color: #f7f7f7;
   --text-color: #254441;
   --primary-color: #43aa8b;
   --secondary-color: #b2b09b;
-  --accent-color: #351431; /* Keep for potential use */
-  --text-on-primary: #FFFFFF; /* White text on primary button */
+  --accent-color: #351431;
+  --text-on-primary: #FFFFFF;
 }
 
 body {
   background-color: var(--bg-color);
   color: var(--text-color);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* Common system font stack */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
-
-/* --- Navbar Customization (Optional) --- */
-/* Add styles later if needed */
 
 /* --- Button Customization --- */
 .btn-primary {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
   color: var(--text-on-primary);
+  transition: background-color 0.2s ease-in-out; /* Add smooth transition */
 }
-
 .btn-primary:hover,
 .btn-primary:focus,
 .btn-primary:active {
-  background-color: #368a70; /* Slightly darker shade for hover/active */
+  background-color: #368a70; /* Slightly darker */
   border-color: #368a70;
   color: var(--text-on-primary);
-  box-shadow: none; /* Optional: remove default bootstrap shadow */
+  box-shadow: none;
 }
 
 /* --- Hero Section --- */
 .hero-section {
-  padding: 6rem 0; /* Adjust padding as needed */
+  padding: 7rem 0 5rem 0; /* Increased top/bottom padding */
   text-align: center;
+  background-color: #ffffff; /* White background for hero */
 }
-
 .hero-section h1 {
-  font-size: 2.8rem; /* Example size, adjust */
-  font-weight: 600;
-  margin-bottom: 1rem;
+  font-size: 3rem; /* Slightly larger */
+  font-weight: 700; /* Bolder */
+  margin-bottom: 1.5rem; /* More space below heading */
+  color: var(--accent-color); /* Use accent for main headline */
 }
-
 .hero-section .lead {
-  color: var(--secondary-color);
-  font-size: 1.2rem;
-  margin-bottom: 2rem;
-  max-width: 600px; /* Constrain sub-headline width */
+  color: var(--text-color); /* Use primary text color, maybe slightly lighter */
+  opacity: 0.9;
+  font-size: 1.25rem;
+  margin-bottom: 2.5rem; /* More space below lead */
+  max-width: 650px;
   margin-left: auto;
   margin-right: auto;
 }
-
 .hero-section .btn {
-    padding: 0.8rem 2rem; /* Make button larger */
-    font-size: 1.1rem;
+  padding: 0.9rem 2.2rem; /* Slightly larger button */
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+.hero-visual {
+    margin-top: 4rem; /* Space above the visual */
 }
 
 /* --- Features Section --- */
 .features-section {
-  padding: 4rem 0;
+  padding: 5rem 0; /* Increased padding */
 }
-
-.features-section .feature-icon {
-  font-size: 2.5rem; /* Placeholder - adjust if using real icons */
+.features-section .feature-icon i { /* Target the <i> tag */
+  font-size: 3rem; /* Adjust icon size */
   color: var(--primary-color);
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem; /* More space below icon */
+  display: inline-block; /* Needed for margin */
 }
-
  .features-section h4 {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem; /* More space below feature title */
     font-weight: 600;
  }
-
  .features-section p {
-    color: var(--secondary-color);
+    color: var(--text-color); /* Use primary text, maybe slightly lighter */
+    opacity: 0.85;
+    font-size: 0.95rem; /* Slightly smaller */
  }
 
 /* --- CTA Section --- */
 .cta-section {
-    padding: 4rem 0;
-    background-color: #e9e9e9; /* Slightly different bg for emphasis */
-    text-align: center;
+  padding: 5rem 0; /* Increased padding */
+  background-color: var(--secondary-color); /* Use secondary color */
+  text-align: center;
+  color: var(--text-color); /* Ensure text contrasts */
 }
  .cta-section h2 {
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem; /* More space */
     font-weight: 600;
+    color: var(--text-on-primary); /* White heading on secondary bg */
+    opacity: 0.95;
  }
-
-/* Add more specific styles as needed */
+ .cta-section .btn {
+    padding: 0.9rem 2.2rem;
+    font-size: 1.15rem;
+    font-weight: 500;
+ }
