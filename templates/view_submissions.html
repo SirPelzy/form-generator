@@ -2,56 +2,55 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="content-section"> {# Added consistent padding #}
+    <div class="d-flex justify-content-between align-items-center mb-4"> {# Increased margin #}
         <div>
             <h2>Submissions: {{ form.title }}</h2>
-            <p class="text-muted">Viewing {{ submissions|length }} submission(s).</p>
+            <p class="text-muted mb-0">Viewing {{ submissions|length }} submission(s).</p> {# mb-0 #}
         </div>
         <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">&laquo; Back to Dashboard</a>
     </div>
-    <hr>
+    {# Removed <hr> #}
 
     {% if submissions %}
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-light">
+        <div class="table-responsive shadow-sm border rounded p-2"> {# Wrap table #}
+            <table class="table table-striped table-hover mb-0"> {# mb-0 as wrapper has padding #}
+                <thead class="table-light sticky-top"> {# Sticky header? Maybe too much #}
                     <tr>
-                        <th>#</th>
-                        <th>Submitted At</th>
-                        {# Loop through fields to create headers #}
+                        <th style="width: 5%;">#</th> {# Approx widths #}
+                        <th style="width: 20%;">Submitted At</th>
                         {% for field in fields %}
-                            <th>{{ field.label }}</th>
+                            <th>{{ field.label }}</th> {# Let columns size naturally #}
                         {% endfor %}
-                        {# Optional: Add actions column later #}
-                        </tr>
+                    </tr>
                 </thead>
                 <tbody>
-                    {# Loop through each submission #}
                     {% for submission in submissions %}
                         <tr>
                             <td>{{ loop.index }}</td>
-                            <td>{{ submission.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-
-                            {# Loop through fields again to get data in the correct column order #}
+                            <td class="text-nowrap">{{ submission.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td> {# Shorter format? nowrap #}
                             {% for field in fields %}
-                                {# Construct the key used when saving data ('field_ID') #}
                                 {% set data_key = 'field_' + field.id|string %}
-                                {# Get value from parsed data dict, default to empty string if key missing #}
-                                <td>{{ submission.data.get(data_key, '') }}</td>
+                                {# Display boolean 'true' nicely #}
+                                {% set display_value = submission.data.get(data_key, '') %}
+                                {% if display_value == 'true' and field.field_type == 'checkbox' %}
+                                    <td>✓ Yes</td>
+                                {% elif display_value == 'false' and field.field_type == 'checkbox' %}
+                                     <td class="text-muted">- No -</td>
+                                {% else %}
+                                    <td>{{ display_value }}</td>
+                                {% endif %}
                             {% endfor %}
-
-                            {# Optional: Placeholder for action buttons like delete #}
-                            </tr>
+                        </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     {% else %}
-        <div class="alert alert-info" role="alert">
+        <div class="alert alert-info mt-3" role="alert"> {# Add margin #}
           This form hasn't received any submissions yet.
         </div>
     {% endif %}
 
-</div> {# End Container #}
+</div> {# End content-section #}
 {% endblock %}
