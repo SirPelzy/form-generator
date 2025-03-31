@@ -14,6 +14,31 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
+/* --- Button Customization --- */
+
+/* Override Bootstrap Primary Button Color */
+.btn-primary {
+  background-color: var(--text-color); /* Use Dark Color (#254441) */
+  border-color: var(--text-color);     /* Use Dark Color for border */
+  color: var(--text-on-primary);      /* Keep White text */
+  transition: background-color 0.2s ease-in-out;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: #1a2d2b; /* Slightly lighter/different dark shade for hover/active */
+  border-color: #1a2d2b;
+  color: var(--text-on-primary);
+  box-shadow: none;
+}
+
+/* --- Keep other button styles if needed --- */
+/* .navbar .btn-signup { ... } */
+/* .btn-secondary { ... } */
+/* .btn-dark-custom { ... } <--- This class is technically no longer needed if btn-primary is the same, but harmless to keep */
+
+
 /* --- Navbar Button/Link Styles --- */
 .navbar .nav-link.login-link {
   color: var(--text-color); /* Use dark text color */
@@ -60,6 +85,7 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--text-color); /* Ensure headings use main text color or accent */
     /* Consider using --accent-color for h1/h2 if desired */
 }
+
 /* Style secondary buttons using the secondary color */
 .btn-secondary {
     background-color: var(--secondary-color); /* #b2b09b */
