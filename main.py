@@ -12,6 +12,12 @@ import secrets
 from flask_wtf.csrf import validate_csrf 
 from wtforms.validators import ValidationError
 from flask_wtf.csrf import CSRFProtect
+from datetime import datetime, date
+
+# --- Define Tier Limits ---
+MAX_FORMS_FREE_TIER = 3
+MAX_SUBMISSIONS_FREE_TIER = 100
+# --- End Tier Limits ---
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -117,6 +123,14 @@ def dashboard():
 @login_required
 def create_form():
     if request.method == 'POST':
+        # *** START: Form Limit Check ***
+        # Assuming only free tier exists for now
+        current_form_count = Form.query.filter_by(user_id=current_user.id).count()
+        if current_form_count >= MAX_FORMS_FREE_TIER:
+            flash(f"You have reached the limit of {MAX_FORMS_FREE_TIER} forms for the free tier. Delete an existing form or upgrade for more.", "warning")
+            return redirect(url_for('dashboard')) # Redirect back to dashboard
+        # *** END: Form Limit Check ***
+        
         form_title = request.form.get('form_title')
         form_description = request.form.get('form_description') # Get optional description
 
@@ -285,10 +299,39 @@ def public_form(form_key):
 
     # --- Handle form SUBMISSION (POST request) ---
     if request.method == 'POST':
+        
+        # --- START: Submission Limit Check ---
+    form_owner = form.author # Get the owner of the form being submitted to
+    # For now, assume all users are on the free tier
+    is_free_tier = True # TODO: Replace with check on user's actual plan later
+    if is_free_tier:
+        today = date.today()
+        start_of_month = datetime(today.year, today.month, 1)
+
+        # Count submissions this month for ALL forms owned by this user
+        submission_count = db.session.query(Submission.id).join(Form).filter(
+            Form.user_id == form_owner.id,
+            Submission.submitted_at >= start_of_month
+        ).count() # More efficient count
+
+        if submission_count >= MAX_SUBMISSIONS_FREE_TIER:
+            # Limit reached - show error and re-render form
+            # NOTE: This prevents the submission from being saved
+            print(f"User {form_owner.id} hit submission limit ({submission_count}/{MAX_SUBMISSIONS_FREE_TIER}) for form {form.id}")
+            # Use a specific error key for the template if needed
+            errors = {'_limit_error': f"This form cannot accept submissions right now (monthly limit reached)."}
+            # Re-render form, passing back submitted data and error
+            # Need fields for re-rendering template correctly
+            fields = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
+            return render_template('public_form.html', form=form, fields=fields, errors=errors, submitted_data=request.form)
+    # --- END: Submission Limit Check ---
+        
         # Fetch the fields associated with this form again for validation
         fields = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
         submitted_data = request.form # Get submitted data
         errors = {} # Dictionary to store validation errors
+        if not errors: # Only validate if limit check passed
+         fields = Field.query.filter_by(form_id=form.id).order_by(Field.id).all() # Ensure fields is defined
 
         # --- Server-Side Validation Loop ---
         for field in fields:
