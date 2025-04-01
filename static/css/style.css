@@ -167,6 +167,36 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 3rem; /* Reduced margin */
 }
 
+/* --- Sections General --- */
+.content-section { /* Renamed from section-padding */
+  padding: 4rem 0;
+}
+/* Adjust padding for specific sections if needed */
+.features-section { padding: 5rem 0; }
+.use-cases-section { padding: 4rem 0; background-color: #ffffff; } /* Example alternate bg */
+.feature-highlights-section { padding: 4rem 0; }
+.testimonial-section { padding: 5rem 0; background-color: var(--secondary-color); color: white; } /* Example style */
+.cta-section { padding: 5rem 0; background-color: var(--text-color); } /* Darker CTA bg */
+.cta-section h2 { color: white; }
+.cta-section .btn-primary { /* Make CTA button pop */
+    background-color: var(--primary-color); border-color: var(--primary-color); color: var(--text-on-primary);
+}
+.cta-section .btn-primary:hover {
+     background-color: #368a70; border-color: #368a70;
+}
+
+/* --- Use Cases Section --- */
+.use-cases-section .icon {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+    display: inline-block;
+}
+.use-cases-section h5 {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
 /* --- Features Section --- */
 .features-section {
   padding: 5rem 0; /* Increased padding */
@@ -205,3 +235,26 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 1.15rem;
     font-weight: 500;
  }
+/* --- Testimonial Section --- */
+.testimonial-section blockquote {
+    font-size: 1.3rem;
+    font-style: italic;
+    opacity: 0.9;
+}
+.testimonial-section .blockquote-footer {
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 1rem;
+}
+
+/* --- Footer --- */
+footer {
+    font-size: 0.9rem;
+}
+footer h6 {
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+}
+footer a.text-muted:hover {
+    color: var(--primary-color) !important; /* Use primary color for hover */
+}
+
