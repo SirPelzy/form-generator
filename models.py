@@ -21,12 +21,14 @@ class User(db.Model, UserMixin):
     # lazy=True means SQLAlchemy will load the related forms only when accessed
     # cascade='all, delete-orphan' means if a user is deleted, their forms are also deleted.
     forms = db.relationship('Form', backref='author', lazy=True, cascade="all, delete-orphan")
-    # --- NEW FIELDS FOR SUBSCRIPTIONS ---
+     # --- NEW FIELDS FOR SUBSCRIPTIONS ---
     plan = db.Column(db.String(50), nullable=False, default='free')
-    subscription_status = db.Column(db.String(50), nullable=True, default='inactive') # e.g., active, past_due, paused, canceled
+    subscription_status = db.Column(db.String(50), nullable=True, default='inactive')
     paddle_subscription_id = db.Column(db.String(100), nullable=True, unique=True)
-    paddle_update_url = db.Column(db.String(255), nullable=True) # URL for user to update payment method
-    paddle_cancel_url = db.Column(db.String(255), nullable=True) # URL for user to cancel subscription
+    # ---> Double-check this line specifically <---
+    paddle_customer_code = db.Column(db.String(100), nullable=True, unique=True)
+    paddle_update_url = db.Column(db.String(255), nullable=True)
+    paddle_cancel_url = db.Column(db.String(255), nullable=True)
     # --- END NEW FIELDS ---
 
     def __repr__(self):
