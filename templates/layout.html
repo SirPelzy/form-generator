@@ -3,7 +3,6 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    {# SEO Meta Description #}
     <meta name="description" content="Create beautiful, simple web forms and surveys without code. Embed anywhere, view responses instantly. Get started free with FormGen.">
 
     {% if title %}
@@ -13,61 +12,33 @@
     {% endif %}
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
-    {# Ensure semantic tags are used - check if navbar is in <header>, footer in <footer> #}
-    {# Example (assuming navbar block exists): #}
-    {# <header>{% block navbar %}{% include 'navbar.html' %}{% endblock %}</header> #}
-    {# Example (assuming main content block exists): #}
-    {# <main role="main" class="container mt-4">...</main> #}
-    {# Example (assuming footer block exists): #}
-    {# <footer>...</footer> #}
-
-    </head>
+</head>
 <body>
-    <header>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm"> {# Added fixed-top, shadow #}
-      <div class="container"> {# Use container for centered content #}
-        <a class="navbar-brand fw-bold" href="{{ url_for('home') }}">FormGen</a> {# Example Name #}
+
+<header>
+    {# --- Navbar --- #}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="{{ url_for('home') }}">FormGen</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-          {# Main Nav Links - Optional: Add later if needed #}
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-              <a class="nav-link" href="#features">Features</a> {# Link to section on page #}
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#use-cases">Use Cases</a> {# Link to section on page #}
-            </li>
-             <li class="nav-item">
-              <a class="nav-link" href="#">Templates</a> {# Link to future page #}
-            </li>
-            <li class="nav-item">
-               {# Link to future /pricing page #}
-              <a class="nav-link" href="#">Pricing</a>
-            </li>
+            <li class="nav-item"><a class="nav-link" href="/#features">Features</a></li> {# Use /#features for home #}
+            <li class="nav-item"><a class="nav-link" href="/#use-cases">Use Cases</a></li>{# Use /#use-cases for home #}
+            <li class="nav-item"><a class="nav-link" href="#">Templates</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Pricing</a></li>
           </ul>
-          {# Auth Links - Keep Updated Version #}
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
             {% if current_user.is_authenticated %}
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
-              </li>
+              <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+              <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
             {% else %}
-              <li class="nav-item me-2">
-                <a class="nav-link login-link" href="{{ url_for('login') }}">Log in</a>
-              </li>
-              <li class="nav-item">
-                <a class="btn btn-sm btn-signup" href="{{ url_for('register') }}">Sign up</a>
-              </li>
+              <li class="nav-item me-2"><a class="nav-link login-link" href="{{ url_for('login') }}">Log in</a></li>
+              <li class="nav-item"><a class="btn btn-sm btn-signup" href="{{ url_for('register') }}">Sign up</a></li>
             {% endif %}
           </ul>
         </div>
@@ -75,53 +46,64 @@
     </nav>
 </header>
 
-    {# Add padding-top to body to offset fixed navbar #}
-<main role="main" style="padding-top: 70px;"> {# Adjust padding value based on navbar height #}
-    {# Flash messages section - keep as is #}
-    <div class="container mt-4">
-     {% with messages = get_flashed_messages(with_categories=true) %}
-        {# ... flash message loop ... #}
-     {% endwith %}
-    </div>
+{# Add padding-top to body to offset fixed navbar #}
+<main role="main" style="padding-top: 70px;">
 
-    {# Main content block where home.html etc. content goes #}
-    {% block content %}{% endblock %}
+    {# === FIX 2: Wrap content block (and flash messages) in a container === #}
+    <div class="container mt-4"> {# Add container here #}
+        {# Flash messages section - Now inside the main container #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {# Main content block where specific page content goes #}
+        {% block content %}{% endblock %}
+
+    </div> {# Close container #}
+    {# === END FIX 2 === #}
+
 </main>
 
-{# --- ADD Comprehensive Footer --- #}
-<footer class="py-5 mt-5 bg-light text-muted"> {# Use bg-light or a custom dark bg #}
+{# --- FIX 1: Conditionally Display Footer --- #}
+{% if not current_user.is_authenticated %}
+<footer class="py-5 mt-5 bg-light text-muted">
     <div class="container">
         <div class="row g-4">
             {# Column 1: Brand/About #}
             <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
-                <h5 class="fw-bold text-dark mb-3">FormGen</h5> {# Use text-dark for heading #}
+                <h5 class="fw-bold text-dark mb-3">FormGen</h5>
                 <p class="small">The simplest way to create forms you and your audience will love.</p>
-                {# Add social icons later #}
             </div>
             {# Column 2: Product Links #}
             <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
                 <h6 class="text-uppercase fw-bold text-dark mb-3">Product</h6>
                 <ul class="list-unstyled small">
-                    <li class="mb-2"><a href="#features" class="text-muted text-decoration-none">Features</a></li>
+                    <li class="mb-2"><a href="/#features" class="text-muted text-decoration-none">Features</a></li>
                     <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Templates</a></li>
                     <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Pricing</a></li>
-                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Integrations</a></li> {# Future #}
+                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Integrations</a></li>
                 </ul>
             </div>
             {# Column 3: Resources #}
             <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
                  <h6 class="text-uppercase fw-bold text-dark mb-3">Resources</h6>
                  <ul class="list-unstyled small">
-                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Blog</a></li> {# Future #}
-                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Help Center</a></li> {# Future #}
-                    <li class="mb-2"><a href="#use-cases" class="text-muted text-decoration-none">Use Cases</a></li>
+                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Blog</a></li>
+                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Help Center</a></li>
+                    <li class="mb-2"><a href="/#use-cases" class="text-muted text-decoration-none">Use Cases</a></li>
                 </ul>
             </div>
              {# Column 4: Legal #}
             <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
                 <h6 class="text-uppercase fw-bold text-dark mb-3">Legal</h6>
                 <ul class="list-unstyled small">
-                    {# Create these pages later #}
                     <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Privacy Policy</a></li>
                     <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Terms of Service</a></li>
                 </ul>
@@ -129,18 +111,22 @@
         </div>
         <hr class="my-4">
         <div class="text-center small">
-            &copy; 2025 FormGen. All rights reserved.
+             {# Using hardcoded year for simplicity #}
+             &copy; 2025 FormGen. All rights reserved.
         </div>
     </div>
 </footer>
-{# --- END Footer --- #}
+{% endif %}
+{# --- END FIX 1 --- #}
 
-   {# --- Scripts (Keep Bootstrap JS and Copy functions) --- #}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" ...></script>
-<script>
+
+{# --- Scripts --- #}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+{# Keep copy scripts if they are needed on multiple pages, otherwise keep them in dashboard.html #}
+{# <script>
 function copyEmbedCode(textAreaId, buttonElement) { /* ... */ }
 function copyDirectLink(inputId, buttonElement) { /* ... */ }
-</script>
+</script> #}
 {# --- End Scripts --- #}
 
 </body>
