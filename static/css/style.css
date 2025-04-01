@@ -246,6 +246,31 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 1rem;
 }
 
+/* --- Pricing Section --- */
+#pricing .card {
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.1);
+    transition: 0.3s;
+}
+
+#pricing .card:hover {
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+}
+
+#pricing .card-header {
+    background-color: #f8f9fa; /* Or match other light backgrounds */
+    padding: 1rem;
+    border-bottom: 1px solid #ddd;
+}
+
+#pricing .card-body {
+    padding: 1.5rem;
+}
+
+#pricing .list-unstyled li {
+    padding: 0.5rem 0;
+}
+
 /* --- Footer --- */
 footer {
     font-size: 0.9rem;
