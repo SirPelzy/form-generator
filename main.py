@@ -528,11 +528,10 @@ def edit_field(field_id):
 @app.route('/subscribe/pro')
 @login_required
 def subscribe_pro():
-    # 1. Check if user is already on the pro plan or has an active subscription
-    #    (Prevents accidental multiple subscriptions)
+    # 1. Check if user is already on the pro plan
     if current_user.plan == 'pro' and current_user.subscription_status == 'active':
         flash("You are already subscribed to the Pro plan.", "info")
-        return redirect(url_for('dashboard')) # Or a billing management page later
+        return redirect(url_for('dashboard'))
 
     # 2. Check if Paddle configuration is available
     if not PADDLE_API_KEY or not PADDLE_PRO_PRICE_ID:
@@ -541,54 +540,59 @@ def subscribe_pro():
         return redirect(url_for('pricing'))
 
     # 3. Initialize Paddle Client
-    # Determine environment (Sandbox for testing/dev, Production for live)
-    # Assumes FLASK_ENV=production is set in Railway, otherwise defaults to Sandbox
     paddle_env = Environment.production if os.environ.get('FLASK_ENV') == 'production' else Environment.sandbox
     try:
         paddle_client = Client(
             PADDLE_API_KEY,
             options=Options(paddle_env)
         )
-        print(f"DEBUG: Initialized Paddle Client in {paddle_env} mode.") # Debug print
+        print(f"DEBUG: Initialized Paddle Client in {paddle_env} mode.")
     except Exception as e:
         flash("Could not initialize payment gateway.", "danger")
         print(f"ERROR: Paddle Client init failed: {e}")
         return redirect(url_for('pricing'))
 
     # 4. Create Paddle Transaction / Checkout Link
-    try:
-         if not TransactionCreate or not TransactionCreateItem:
-              raise ImportError("Paddle SDK classes not imported correctly during startup.")
-              
-          checkout_payload = TransactionCreate(
-              items=[TransactionCreateItem(price_id=PADDLE_PRO_PRICE_ID, quantity=1)], # Use TransactionCreateItem
-              customer={'email': current_user.email}, # Try passing customer as dict
-              custom_data={'user_id': str(current_user.id)},
-         )
-         
-         print(f"DEBUG: Creating Paddle transaction payload: {checkout_payload}")
-         transaction = paddle_client.transactions.create(checkout_payload) # Use client.transactions
+    try: # <-- Start of try block (Level 1 indent within function)
+        # ---> Lines inside try are indented (Level 2)
+        # Check if imports worked
+        if not TransactionCreate or not TransactionCreateItem:
+             # ---> Code inside this if is indented (Level 3)
+             raise ImportError("Paddle SDK classes not imported correctly during startup.")
 
-        if transaction and transaction.checkout and transaction.checkout.url:
+        # Create the payload
+        checkout_payload = TransactionCreate( # <-- Level 2 indent
+            items=[TransactionCreateItem(price_id=PADDLE_PRO_PRICE_ID, quantity=1)], # <-- Level 3 indent (inside list/call)
+            customer={'email': current_user.email}, # <-- Level 3 indent
+            custom_data={'user_id': str(current_user.id)}, # <-- Level 3 indent
+        ) # <-- Level 2 indent (closing parenthesis)
+
+        print(f"DEBUG: Creating Paddle transaction payload: {checkout_payload}") # <-- Level 2 indent
+        transaction = paddle_client.transactions.create(checkout_payload) # <-- Level 2 indent
+
+        # Check response and redirect
+        if transaction and transaction.checkout and transaction.checkout.url: # <-- Level 2 indent
+            # ---> Code inside this if is indented (Level 3)
             checkout_url = transaction.checkout.url
-            print(f"DEBUG: Paddle Checkout URL generated: {checkout_url}") # Debug print
-            # 5. Redirect user to Paddle Checkout
+            print(f"DEBUG: Paddle Checkout URL generated: {checkout_url}")
             return redirect(checkout_url)
-        else:
-             # Log the actual response if possible for debugging
-             print(f"DEBUG: Paddle response missing checkout URL. Response: {transaction}")
-             raise Exception("Checkout URL not found in Paddle response.")
+        else: # <-- Level 2 indent
+            # ---> Code inside this else is indented (Level 3)
+            print(f"DEBUG: Paddle response missing checkout URL. Response: {transaction}")
+            raise Exception("Checkout URL not found in Paddle response.")
 
-    except ImportError as e:
-            print(f"ERROR: Paddle SDK classes missing: {e}")
-            flash("Payment gateway integration error (SDK classes). Contact support.", "danger")
-            return redirect(url_for('pricing'))
+    except ImportError as e: # <-- Level 1 indent (matches 'try')
+         # ---> Code inside except is indented (Level 2)
+         print(f"ERROR: Paddle SDK classes missing: {e}")
+         flash("Payment gateway integration error (SDK classes). Contact support.", "danger")
+         return redirect(url_for('pricing'))
+    except Exception as e: # <-- Level 1 indent (matches 'try')
+         # ---> Code inside except is indented (Level 2)
+         print(f"ERROR: Paddle transaction creation failed: {e}")
+         flash("Could not initiate subscription checkout. Please try again or contact support.", "danger")
+         return redirect(url_for('pricing'))
 
-    except Exception as e:
-        # Log the full error from Paddle for debugging
-        print(f"ERROR: Paddle transaction creation failed: {e}")
-        flash("Could not initiate subscription checkout. Please try again or contact support.", "danger")
-        return redirect(url_for('pricing'))
+# --- End of subscribe_pro function ---
 
 @app.route('/pricing')
 def pricing():
