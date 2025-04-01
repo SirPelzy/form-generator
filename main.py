@@ -76,6 +76,27 @@ ALLOWED_FIELD_TYPES = [
     'checkbox', 'radio', 'select'
 ]
 
+# !!!!!! TEMPORARY ROUTE FOR DB SCHEMA RESET - DELETES ALL DATA !!!!!!
+# !!!!!! REMOVE IMMEDIATELY AFTER USE !!!!!!
+SECRET_DB_RESET_PATH = 'your-chosen-secret-reset-path-here-12345' # Make sure this is unique!
+
+@app.route(f'/{SECRET_DB_RESET_PATH}')
+def temp_reset_tables():
+    print(f"ACCESSING TEMPORARY DB RESET ROUTE: /{SECRET_DB_RESET_PATH}")
+    try:
+        with app.app_context():
+             print("App context active. Dropping all tables (DATA WILL BE LOST)...")
+             from models import db
+             db.drop_all() # <-- DANGER: Deletes all data!
+             print("Tables dropped. Creating all tables with new schema...")
+             db.create_all() # <-- Recreates tables based on updated models.py
+             print("db.create_all() command finished.")
+        return f"OK: db.drop_all() and db.create_all() executed via /{SECRET_DB_RESET_PATH}. Database reset. Remove this route NOW!", 200
+    except Exception as e:
+        print(f"ERROR during temporary DB reset route: {e}")
+        return f"Error during DB reset: {e}", 500
+# !!!!!! END OF TEMPORARY ROUTE - REMEMBER TO REMOVE !!!!!!
+
 # --- Routes ---
 
 @app.route('/')
