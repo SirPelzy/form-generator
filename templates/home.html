@@ -2,75 +2,189 @@
 
 {% block content %}
 
-{# --- Hero Section --- #}
-<section class="hero-section">
+{# --- Hero Section (Two Columns) --- #}
+<section class="hero-section pt-5 pb-4"> {# Adjusted padding slightly #}
   <div class="container">
-    <div class="row align-items-center justify-content-between"> {# Use row, align items vertically, adjust justification #}
-
+    <div class="row align-items-center justify-content-between">
       {# Left Column: Visual #}
-      <div class="col-md-6 col-lg-5 mb-4 mb-md-0 hero-visual-column"> {# Adjust column size breakdown if needed #}
-        <img src="{{ url_for('static', filename='images/img.png') }}" {# <<< UPDATE FILENAME! #}
+      <div class="col-md-6 col-lg-5 mb-5 mb-md-0 text-center"> {# Added text-center for image #}
+        <img src="{{ url_for('static', filename='img.png') }}" {# <<< UPDATE FILENAME! #}
              alt="Hero image" {# <<< UPDATE ALT TEXT! #}
              class="img-fluid rounded shadow-lg">
-         {# Make sure you have uploaded your image to static/images/ #}
       </div>
-
       {# Right Column: Text Content #}
-      <div class="col-md-6 hero-text-column text-md-start text-center"> {# Left align text on medium+ screens, center on small #}
-        {# Refined Headline #}
-        <h1>Build Custom Web Forms in Minutes, Not Hours</h1>
-        {# Refined Sub-headline #}
-        <p class="lead">
-          Effortlessly create, embed, and manage forms for your website or project.
+      <div class="col-md-6 hero-text-column text-md-start text-center">
+        <h1 class="display-5">Build Custom Web Forms in Minutes, Not Hours</h1> {# Example Headline #}
+        <p class="lead mb-4">
+          Effortlessly create, embed, and manage forms for your website or project. 
           Perfect for collecting leads, feedback, applications, and more – no coding required.
         </p>
-        {# Main CTA - Using custom dark button class #}
-        <a href="{{ url_for('register') }}" class="btn btn-dark-custom btn-lg shadow-sm">Get Started Free</a>
-      </div>
-
-    </div> {# End row #}
-  </div> {# End container #}
-</section>
-
-{# --- Features Section --- #}
-<section id="features" class="features-section">
-  <div class="container">
-    <div class="row text-center g-5"> {# Increased gap between columns #}
-      {# Feature 1 #}
-      <div class="col-md-4">
-        {# Bootstrap Icon added #}
-        <div class="feature-icon"><i class="bi bi-pencil-square"></i></div>
-        <h4>Intuitive Builder</h4>
-        {# Benefit-focused text #}
-        <p>Design your forms quickly with simple controls. No complex setups, just the fields you need.</p>
-      </div>
-      {# Feature 2 #}
-      <div class="col-md-4">
-        {# Bootstrap Icon added #}
-        <div class="feature-icon"><i class="bi bi-code-slash"></i></div>
-        <h4>Embed Anywhere</h4>
-        {# Benefit-focused text #}
-        <p>Easily add forms to any website builder or HTML page with a simple copy-paste snippet.</p>
-      </div>
-      {# Feature 3 #}
-      <div class="col-md-4">
-        {# Bootstrap Icon added #}
-        <div class="feature-icon"><i class="bi bi-table"></i></div>
-        <h4>Clear Dashboard</h4>
-        {# Benefit-focused text #}
-        <p>View and manage all your responses in one organized place, instantly as they arrive.</p>
+        <a href="{{ url_for('register') }}" class="btn btn-dark-custom btn-lg shadow-sm">Create a free form</a>
       </div>
     </div>
   </div>
 </section>
 
+{# --- Social Proof Section (Commented Out as Requested) --- #}
+{# --- Visual How it Works / Feature Teaser Section --- #}
+<section class="how-it-works-section content-section text-center">
+  <div class="container">
+    <h2 class="mb-3">Create Forms, Your Way.</h2>
+    <p class="lead text-muted mb-5">Build, share, and analyze forms with unparalleled simplicity.</p>
+    {# Placeholder for GIF / Carousel / Key Screenshots #}
+    <div class="row justify-content-center">
+      <div class="col-lg-9">
+         <img src="https://via.placeholder.com/900x500/f7f7f7/cccccc?text=GIF+or+Screenshot+Showing+Builder"
+              alt="Demonstration of the easy-to-use form builder interface"
+              class="img-fluid rounded border shadow-sm">
+         {# Replace with your actual GIF or image later #}
+      </div>
+    </div>
+    {# Optional 3 step text below visual #}
+    <div class="row mt-5 g-4">
+        <div class="col-md-4"><h5 class="fw-normal">1. Build Quickly</h5><p class="small text-muted">Add questions like writing notes.</p></div>
+        <div class="col-md-4"><h5 class="fw-normal">2. Share Easily</h5><p class="small text-muted">Embed on any site or share a link.</p></div>
+        <div class="col-md-4"><h5 class="fw-normal">3. Analyze Instantly</h5><p class="small text-muted">View responses on your dashboard.</p></div>
+    </div>
+  </div>
+</section>
+
+{# --- Use Cases Section --- #}
+<section id="use-cases" class="use-cases-section content-section text-center">
+    <div class="container">
+        <h2 class="mb-5">From Simple Contacts to Detailed Surveys</h2>
+        <div class="row g-4">
+            <div class="col-md-4 col-lg-3">
+                <div class="icon"><i class="bi bi-person-lines-fill"></i></div>
+                <h5>Contact Forms</h5>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <div class="icon"><i class="bi bi-lightbulb"></i></div>
+                <h5>Feedback Forms</h5>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <div class="icon"><i class="bi bi-card-checklist"></i></div>
+                <h5>Registration Forms</h5>
+            </div>
+             <div class="col-md-4 col-lg-3">
+                <div class="icon"><i class="bi bi-clipboard-data"></i></div>
+                <h5>Simple Surveys</h5>
+            </div>
+             <div class="col-md-4 col-lg-3">
+                <div class="icon"><i class="bi bi-briefcase"></i></div>
+                <h5>Job Applications</h5>
+            </div>
+             <div class="col-md-4 col-lg-3">
+                <div class="icon"><i class="bi bi-calendar-check"></i></div>
+                <h5>Event RSVPs</h5>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <div class="icon"><i class="bi bi-chat-quote"></i></div>
+                <h5>Testimonials</h5>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <div class="icon"><i class="bi bi-plus-circle"></i></div>
+                <h5>And More...</h5>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# --- Key Feature Highlights Section (Alternating Layout with Screenshots) --- #}
+<section id="features" class="feature-highlights-section content-section bg-light"> {# Added bg-light #}
+  <div class="container">
+    <h2 class="text-center mb-5 display-6 fw-bold">Everything You Need, Nothing You Don't</h2>
+
+    {# Feature 1: Simple Interface #}
+    <div class="row align-items-center mb-5 pb-4 border-bottom"> {# Add margin/padding/border #}
+      <div class="col-md-6">
+        {# Placeholder for Screenshot 1 #}
+        <img src="{{ url_for('static', filename='images/feature-builder.png') }}"
+             alt="Screenshot of the intuitive form builder interface"
+             class="img-fluid rounded shadow-sm mb-3 mb-md-0">
+         {# Create static/images/feature-builder.png #}
+      </div>
+      <div class="col-md-6 ps-md-5"> {# Add padding on left for text #}
+        <div class="feature-icon mb-2 text-start"><i class="bi bi-magic fs-2"></i></div> {# Smaller icon, left aligned #}
+        <h4 class="fw-bold mb-2">Simple Interface</h4>
+        <p class="text-secondary">Build powerful forms quickly without a steep learning curve or complex menus. Add questions as easily as writing a document.</p>
+      </div>
+    </div>
+
+    {# Feature 2: Easy Embedding #}
+    <div class="row align-items-center mb-5 pb-4 border-bottom">
+      {# Text on Left (order-md-1 pushes it right on medium+) #}
+      <div class="col-md-6 order-md-1 ps-md-5">
+         <div class="feature-icon mb-2 text-start"><i class="bi bi-code-slash fs-2"></i></div>
+         <h4 class="fw-bold mb-2">Embed Anywhere</h4>
+         <p class="text-secondary">Works with any website builder (WordPress, Squarespace, Notion, etc.) or HTML page using a simple copy-paste snippet.</p>
+      </div>
+       {# Image on Right (order-md-0 keeps it left by default, right visually on medium+) #}
+      <div class="col-md-6 order-md-0">
+         <img src="{{ url_for('static', filename='images/feature-embed.png') }}"
+              alt="Example of generated embed code snippet"
+              class="img-fluid rounded shadow-sm mb-3 mb-md-0">
+          {# Create static/images/feature-embed.png #}
+      </div>
+    </div>
+
+    {# Feature 3: Instant Results #}
+    <div class="row align-items-center mb-5 pb-4 border-bottom">
+      <div class="col-md-6">
+         <img src="{{ url_for('static', filename='images/feature-dashboard.png') }}"
+              alt="Screenshot of the clean dashboard showing form submissions"
+              class="img-fluid rounded shadow-sm mb-3 mb-md-0">
+          {# Create static/images/feature-dashboard.png #}
+      </div>
+      <div class="col-md-6 ps-md-5">
+         <div class="feature-icon mb-2 text-start"><i class="bi bi-bar-chart-line fs-2"></i></div>
+         <h4 class="fw-bold mb-2">Instant Results</h4>
+         <p class="text-secondary">View and manage your submissions clearly on your dashboard as soon as they arrive. Understand your audience easily.</p>
+      </div>
+    </div>
+
+    {# Feature 4: Generous Free Plan #}
+    <div class="row align-items-center"> {# Removed border bottom #}
+      <div class="col-md-6 order-md-1 ps-md-5">
+        <div class="feature-icon mb-2 text-start"><i class="bi bi-gem fs-2"></i></div> {# Icon for value/free #}
+        <h4 class="fw-bold mb-2">Generous Free Plan</h4>
+        <p class="text-secondary">Get started with powerful core features, multiple forms, and a useful number of submissions completely free.</p>
+      </div>
+      <div class="col-md-6 order-md-0">
+         {# Maybe a graphic representing "free" or value? #}
+         <img src="{{ url_for('static', filename='images/feature-free-tier.png') }}"
+              alt="Graphic illustrating the value included in the free plan"
+              class="img-fluid rounded shadow-sm mb-3 mb-md-0">
+          {# Create static/images/feature-free-tier.png #}
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{# --- Testimonial Placeholder Section --- #}
+<section class="testimonial-section content-section text-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                 <blockquote class="blockquote">
+                     <p>"Finally, a form builder that's actually easy to use! Setting up our contact form took minutes."</p>
+                 </blockquote>
+                 <figcaption class="blockquote-footer mt-3">
+                     Future User <cite title="Source Title">Somewhere Online</cite>
+                 </figcaption>
+            </div>
+        </div>
+    </div>
+</section>
+
 {# --- Final Call to Action (CTA) Section --- #}
-<section class="cta-section">
+<section class="cta-section content-section">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-8">
-                <h2>Stop Missing Out. Start Collecting Data Today.</h2>
-                <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg shadow-sm">Create Your Free Form Now</a>
+                <h2>Get Started with Simple Forms Today</h2>
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg shadow-sm mt-3">Sign Up - It's Free!</a>
             </div>
         </div>
     </div>
