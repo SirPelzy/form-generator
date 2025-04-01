@@ -518,13 +518,13 @@ def edit_field(field_id):
                            field=field_to_edit, # Pass the field object to pre-fill form
                            allowed_field_types=ALLOWED_FIELD_TYPES) # For the type dropdown
 
-# main.py -> Replace the whole function
-
 # main.py -> Replace the entire subscribe_pro function
 
 @app.route('/subscribe/pro')
 @login_required
 def subscribe_pro():
+    # ---> ADD THIS LINE <---
+    print(f"DEBUG: Checking subscription status for user: ID={current_user.id}, Email={current_user.email}, Plan='{current_user.plan}', Status='{current_user.subscription_status}'")
     # 1. Check if user is already on the pro plan
     if current_user.plan == 'pro' and current_user.subscription_status == 'active':
         flash("You are already subscribed to the Pro plan.", "info")
