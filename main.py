@@ -509,6 +509,10 @@ def pricing():
     # Can add logic later to pass plan details if needed
     return render_template('pricing.html', title='Pricing')
 
+@app.route('/terms')
+def terms_of_service():
+    return render_template('terms.html', title='Terms of Service')
+
 if __name__ == '__main__':
     # Ensure database tables are created before running the app for the first time
     # with app.app_context():
