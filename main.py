@@ -14,7 +14,13 @@ from wtforms.validators import ValidationError
 from flask_wtf.csrf import CSRFProtect
 from datetime import datetime, date
 from paddle_billing import Client, Environment, Options
-from paddle_billing.models import transaction_create
+try:
+    from paddle_billing.resources.transactions.operations import TransactionCreate, TransactionCreateItem
+    print("DEBUG: Imported TransactionCreate, TransactionCreateItem successfully.")
+except ImportError as e:
+    print(f"ERROR: Failed to import Paddle classes: {e}. Check SDK structure/docs.")
+    TransactionCreate = None
+    TransactionCreateItem = None
 
 # --- Load Paddle Configuration ---
 PADDLE_VENDOR_ID = os.environ.get('PADDLE_VENDOR_ID')
@@ -551,20 +557,17 @@ def subscribe_pro():
 
     # 4. Create Paddle Transaction / Checkout Link
     try:
-        # Structure based on Paddle Billing API - Verify with SDK docs if needed
-        checkout_payload = transaction_create.TransactionCreate(
-            items=[transaction_create.Item(price_id=PADDLE_PRO_PRICE_ID, quantity=1)],
-            # Pass customer email - Paddle usually creates/links customer automatically
-            # If user has existing paddle_customer_id, you might pass that instead
-            customer=transaction_create.Customer(email=current_user.email),
-            # Custom data helps link webhook events back to your user_id
-            custom_data={'user_id': str(current_user.id)},
-            # Billing details can be collected on Paddle page or passed here
-            # billing_details=transaction_create.BillingDetails(...)
-        )
-
-        print(f"DEBUG: Creating Paddle transaction for user {current_user.email} with price {PADDLE_PRO_PRICE_ID}") # Debug print
-        transaction = paddle_client.transactions.create(checkout_payload)
+         if not TransactionCreate or not TransactionCreateItem:
+              raise ImportError("Paddle SDK classes not imported correctly during startup.")
+              
+          checkout_payload = TransactionCreate(
+              items=[TransactionCreateItem(price_id=PADDLE_PRO_PRICE_ID, quantity=1)], # Use TransactionCreateItem
+              customer={'email': current_user.email}, # Try passing customer as dict
+              custom_data={'user_id': str(current_user.id)},
+         )
+         
+         print(f"DEBUG: Creating Paddle transaction payload: {checkout_payload}")
+         transaction = paddle_client.transactions.create(checkout_payload) # Use client.transactions
 
         if transaction and transaction.checkout and transaction.checkout.url:
             checkout_url = transaction.checkout.url
@@ -572,7 +575,14 @@ def subscribe_pro():
             # 5. Redirect user to Paddle Checkout
             return redirect(checkout_url)
         else:
-            raise Exception("Checkout URL not found in Paddle response.")
+             # Log the actual response if possible for debugging
+             print(f"DEBUG: Paddle response missing checkout URL. Response: {transaction}")
+             raise Exception("Checkout URL not found in Paddle response.")
+
+    except ImportError as e:
+            print(f"ERROR: Paddle SDK classes missing: {e}")
+            flash("Payment gateway integration error (SDK classes). Contact support.", "danger")
+            return redirect(url_for('pricing'))
 
     except Exception as e:
         # Log the full error from Paddle for debugging
