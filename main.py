@@ -14,12 +14,26 @@ from wtforms.validators import ValidationError
 from flask_wtf.csrf import CSRFProtect
 from datetime import datetime, date
 from paddle_billing import Client, Environment, Options
-# Confirmed imports based on documentation snippets provided:
-from paddle_billing.resources.transactions.operations import CreateTransaction, TransactionCreateItem
-from paddle_billing.resources.customers.operations import CustomerCreate # For creating a customer
-from paddle_billing.Entities.Shared import CollectionMode # For setting collection mode
-# Import AddressCreate if/when passing billing_details or customer address later
-# from paddle_billing.resources.addresses.operations import AddressCreate
+try:
+    # Try importing directly from the Create operation module
+    from paddle_billing.Resources.Transactions.Operations.Create import CreateTransaction, TransactionCreateItem
+    # Guessing CustomerCreate lives in a similar structure
+    from paddle_billing.Resources.Customers.Operations.Create import CustomerCreate
+    # Get Enum for CollectionMode
+    from paddle_billing.Entities.Shared import CollectionMode
+    print("DEBUG: Final Paddle class import attempt successful.")
+    PADDLE_CLASSES_LOADED = True
+except ImportError as e:
+    print(f"ERROR: CRITICAL - Failed to import Paddle classes: {e}.")
+    print("         Please find a 'Create Transaction' example in the Paddle SDK docs")
+    print("         and provide the EXACT import lines and payload creation code.")
+    # Set flags/dummies so app might load, but checkout route will fail clearly
+    CreateTransaction = None
+    TransactionCreateItem = None
+    CustomerCreate = None
+    CollectionMode = None
+    PADDLE_CLASSES_LOADED = False
+# --- END: Final Paddle Import Attempt ---
 
 # --- Load Paddle Configuration ---
 PADDLE_VENDOR_ID = os.environ.get('PADDLE_VENDOR_ID')
@@ -524,81 +538,75 @@ def edit_field(field_id):
                            field=field_to_edit, # Pass the field object to pre-fill form
                            allowed_field_types=ALLOWED_FIELD_TYPES) # For the type dropdown
 
+# main.py -> Replace the whole subscribe_pro function
+
 @app.route('/subscribe/pro')
 @login_required
 def subscribe_pro():
-    # 1. Check if user is already on the pro plan
+    # 0. Check if SDK classes loaded correctly on startup
+    if not PADDLE_CLASSES_LOADED:
+         flash("Payment gateway integration is misconfigured (SDK Error). Please contact support.", "danger")
+         return redirect(url_for('pricing'))
+
+    # 1. Check existing plan
     if current_user.plan == 'pro' and current_user.subscription_status == 'active':
         flash("You are already subscribed to the Pro plan.", "info")
-        return redirect(url_for('dashboard')) # Or billing page
+        return redirect(url_for('dashboard'))
 
-    # 2. Check if Paddle config is available
-    if not PADDLE_API_KEY or not PADDLE_PRO_PRICE_ID or not PADDLE_VENDOR_ID: # Added Vendor check implicitly needed by SDK
+    # 2. Check Paddle config
+    if not PADDLE_API_KEY or not PADDLE_PRO_PRICE_ID or not PADDLE_VENDOR_ID:
         flash("Payment gateway configuration error. Cannot proceed.", "danger")
-        print("ERROR: Missing Paddle Env Vars (API_KEY, PRO_PRICE_ID, VENDOR_ID)")
+        print("ERROR: Missing Paddle Env Vars")
         return redirect(url_for('pricing'))
 
     # 3. Initialize Paddle Client
     paddle_env = Environment.production if os.environ.get('FLASK_ENV') == 'production' else Environment.sandbox
     try:
         paddle_client = Client(PADDLE_API_KEY, options=Options(paddle_env))
-        print(f"DEBUG: Initialized Paddle Client in {paddle_env} mode.")
     except Exception as e:
-        flash("Could not initialize payment gateway.", "danger")
-        print(f"ERROR: Paddle Client init failed: {e}")
+        flash("Could not initialize payment gateway.", "danger"); print(f"ERROR: Paddle Client init failed: {e}")
         return redirect(url_for('pricing'))
 
     # 4. Find or Create Paddle Customer ID
     paddle_customer_id = current_user.paddle_customer_code
     if not paddle_customer_id:
         try:
-            print(f"DEBUG: No Paddle customer ID found for user {current_user.id}. Creating one...")
-            # Create payload for customer creation
-            # Verify 'CustomerCreate' import path if issues arise. Assumes it takes email.
-            customer_payload = CustomerCreate(email=current_user.email, name=current_user.username) # Added name
+            print(f"DEBUG: Creating Paddle customer for user {current_user.id}")
+            # Use CustomerCreate import
+            customer_payload = CustomerCreate(email=current_user.email, name=current_user.username)
             new_paddle_customer = paddle_client.customers.create(customer_payload)
             paddle_customer_id = new_paddle_customer.id
             print(f"DEBUG: Created Paddle customer ID: {paddle_customer_id}")
-
-            # Save the new customer ID to our user model
             current_user.paddle_customer_code = paddle_customer_id
             db.session.commit()
             print(f"DEBUG: Saved paddle_customer_code for user {current_user.id}")
-
         except Exception as e:
-            db.session.rollback()
-            print(f"ERROR: Failed to create Paddle customer for user {current_user.id}: {e}")
-            flash("Could not set up billing customer. Please try again.", "danger")
-            return redirect(url_for('pricing'))
+            db.session.rollback(); print(f"ERROR: Failed to create Paddle customer: {e}")
+            flash("Could not set up billing customer.", "danger"); return redirect(url_for('pricing'))
 
     # 5. Create Paddle Transaction / Checkout Link
     try:
-        checkout_payload = CreateTransaction(
-            items=[TransactionCreateItem(price_id=PADDLE_PRO_PRICE_ID, quantity=1)],
-            customer_id=paddle_customer_id, # Use the retrieved/created customer ID
+        checkout_payload = CreateTransaction( # Use CreateTransaction
+            items=[TransactionCreateItem(price_id=PADDLE_PRO_PRICE_ID, quantity=1)], # Use TransactionCreateItem
+            customer_id=paddle_customer_id, # Use the ID string
             custom_data={'user_id': str(current_user.id)},
-            collection_mode=CollectionMode.AUTOMATIC, # Indicate recurring/automatic billing
-            # Add 'return_url': url_for('dashboard', _external=True) if API supports it here
+            collection_mode=CollectionMode.AUTOMATIC, # Use Enum
         )
-
         print(f"DEBUG: Creating Paddle transaction payload: {checkout_payload}")
         transaction = paddle_client.transactions.create(checkout_payload)
 
         if transaction and transaction.checkout and transaction.checkout.url:
             checkout_url = transaction.checkout.url
             print(f"DEBUG: Paddle Checkout URL generated: {checkout_url}")
-            # 6. Redirect user to Paddle Checkout
-            return redirect(checkout_url)
+            return redirect(checkout_url) # 6. Redirect user
         else:
             print(f"DEBUG: Paddle response missing checkout URL. Response: {transaction}")
             raise Exception("Checkout URL not found in Paddle response.")
-
     except Exception as e:
         print(f"ERROR: Paddle transaction creation failed: {e}")
         error_detail = getattr(e, 'error', {}).get('detail', str(e)) if hasattr(e, 'error') and isinstance(getattr(e, 'error', {}), dict) else str(e)
         flash(f"Could not initiate subscription checkout: {error_detail}. Please try again or contact support.", "danger")
         return redirect(url_for('pricing'))
-
 # --- End of subscribe_pro function ---
 
 @app.route('/pricing')
