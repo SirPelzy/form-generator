@@ -1,0 +1,73 @@
+{# templates/terms.html #}
+{% extends "layout.html" %} {# Assumes you want the standard navbar etc. #}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="content-section py-5"> {# Added padding #}
+    <div class="container"> {# Constrain width #}
+        <h1 class="mb-4 display-5 fw-bold">Terms of Service for FormGen</h1>
+        <p class="text-muted mb-4">Last Updated: April 1, 2025</p>
+
+        <p>Welcome to FormGen! These Terms of Service ("Terms") govern your access to and use of the FormGen website, services, and applications (collectively, the "Service") provided by The CV Place ("Provider", "we", "us", or "our"), located in Lagos, Nigeria.</p>
+        <p>Please read these Terms carefully before using the Service. By accessing or using the Service, you agree to be bound by these Terms and our <a href="#">Privacy Policy</a>. If you do not agree to these Terms, do not use the Service.</p> {# TODO: Add url_for('privacy_policy') later #}
+
+        <h2 class="mt-4 h4 fw-bold">1. Definitions</h2>
+        <ul class="list-unstyled ps-3">
+           <li><strong>Service:</strong> The FormGen web application, website (form-generator.up.railway.app), APIs, and related services for creating, embedding, managing online forms, and viewing submissions.</li>
+           <li><strong>User / You:</strong> Any person or entity who registers for an account or uses the Service.</li>
+           <li><strong>Content:</strong> Any information, text, graphics, forms, questions, or other materials created, uploaded, shared, or stored by Users on the Service.</li>
+           <li><strong>Submissions:</strong> Data, information, responses, or materials submitted by end-users through forms created using the Service.</li>
+        </ul>
+
+        <h2 class="mt-4 h4 fw-bold">2. Account Registration and Use</h2>
+        <p><strong>Eligibility:</strong> You must be at least 18 years old or the age of legal majority in your jurisdiction to create an account and use the Service.</p>
+        <p><strong>Account Information:</strong> You agree to provide accurate, current, and complete information during registration and keep your account information updated.</p>
+        <p><strong>Security:</strong> You are responsible for safeguarding your account password and for all activities that occur under your account. You agree to notify us immediately of any unauthorized use of your account. We are not liable for any loss or damage arising from your failure to protect your account.</p>
+        <p><strong>Acceptable Use:</strong> You agree not to use the Service for any illegal or unauthorized purpose, including but not limited to spamming, phishing, collecting sensitive personal information without adequate consent or security, violating intellectual property rights, or transmitting harmful code.</p>
+
+        <h2 class="mt-4 h4 fw-bold">3. Service Plans and Payments</h2>
+        <p><strong>Free Tier:</strong> We offer a free tier with limitations on usage (e.g., number of forms, monthly submissions) as described on our <a href="{{ url_for('pricing') }}">Pricing page</a> or elsewhere on the Service. We reserve the right to modify the limits or features of the free tier at any time. Forms created under the free tier may display "[Powered by FormGen]" branding.</p>
+        <p><strong>Paid Plans ("Pro" Tier, etc.):</strong> We offer paid subscription plans with enhanced features and higher limits ("Paid Plans"). Details of current Paid Plans, features, limits, and pricing are available on our <a href="{{ url_for('pricing') }}">Pricing page</a>.</p>
+        <p><strong>Billing:</strong> Fees for Paid Plans are billed in advance on a recurring basis (e.g., monthly or annually) through our third-party payment processor, Paddle. You must provide valid payment information. By subscribing, you authorize us (through our processor) to charge the subscription fees automatically.</p>
+        <p><strong>Price Changes:</strong> We reserve the right to change the fees for Paid Plans upon reasonable prior notice - 30 days notice via email or service notification.</p>
+        <p><strong>Refunds:</strong> Subscription fees are non-refundable except where required by law.</p>
+        <p><strong>Taxes:</strong> You are responsible for any applicable taxes related to your subscription fees, unless handled directly by our payment processor.</p>
+
+        <h2 class="mt-4 h4 fw-bold">4. Content and Submissions</h2>
+        <p><strong>Your Ownership:</strong> You retain ownership of all intellectual property rights in the Content you create using the Service and the Submissions collected through your forms.</p>
+        <p><strong>License to Us:</strong> By using the Service, you grant us a limited, worldwide, non-exclusive, royalty-free license to host, store, process, reproduce, modify (for formatting/display), and transmit your Content and Submissions solely for the purpose of providing and improving the Service to you.</p>
+        <p><strong>Your Responsibility:</strong> You are solely responsible for your Content and Submissions, including ensuring you have all necessary rights and permissions to collect and use the data, and that your use complies with all applicable laws (including privacy laws like NDPR, GDPR, etc.). You agree not to use the Service to collect highly sensitive information (e.g., credit card numbers, passwords, government ID numbers) unless you implement appropriate security measures and comply with all applicable regulations.</p>
+        <p><strong>Our Access:</strong> We will not access your Submissions except as necessary to provide the Service, provide technical support at your request, respond to legal requirements, or investigate potential violations of these Terms.</p>
+
+        <h2 class="mt-4 h4 fw-bold">5. Intellectual Property</h2>
+        <p>The Service itself, including its software, design, trademarks, logos, and website content (excluding User Content and Submissions), is the exclusive property of The CV Place and its licensors, protected by copyright, trademark, and other laws. You may not copy, modify, distribute, sell, or lease any part of our Service or included software.</p>
+
+        <h2 class="mt-4 h4 fw-bold">6. Privacy</h2>
+        <p>Your use of the Service is also governed by our <a href="#">Privacy Policy</a>, which details how we collect, use, and protect your personal information and the data processed through the Service.</p> {# TODO: Add url_for('privacy_policy') later #}
+
+        <h2 class="mt-4 h4 fw-bold">7. Termination</h2>
+        <p><strong>By You:</strong> You may stop using the Service and terminate your account at any time by contacting support at contactthecvplace@gmail.com.</p>
+        <p><strong>By Us:</strong> We may suspend or terminate your access to the Service immediately, without prior notice or liability, for any reason, including if you breach these Terms.</p>
+        <p><strong>Effect of Termination:</strong> Upon termination, your right to use the Service will cease immediately. We may delete your account, Content, and Submissions according to our data retention policy, data may be deleted within 90 days of termination. We are not liable for any loss of data upon termination.</p>
+
+        <h2 class="mt-4 h4 fw-bold">8. Disclaimers</h2>
+        <p>THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, SECURE, OR ERROR-FREE.</p>
+
+        <h2 class="mt-4 h4 fw-bold">9. Limitation of Liability</h2>
+        <p>TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE CV PLACE, ITS AFFILIATES, DIRECTORS, EMPLOYEES, OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES, WHETHER INCURRED DIRECTLY OR INDIRECTLY, OR ANY LOSS OF DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES, RESULTING FROM (A) YOUR ACCESS TO OR USE OF OR INABILITY TO ACCESS OR USE THE SERVICE; (B) ANY CONDUCT OR CONTENT OF ANY THIRD PARTY ON THE SERVICE; (C) ANY CONTENT OBTAINED FROM THE SERVICE; OR (D) UNAUTHORIZED ACCESS, USE, OR ALTERATION OF YOUR TRANSMISSIONS OR CONTENT, WHETHER BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), OR ANY OTHER LEGAL THEORY, WHETHER OR NOT WE HAVE BEEN INFORMED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+
+        <h2 class="mt-4 h4 fw-bold">10. Indemnification</h2>
+        <p>You agree to defend, indemnify, and hold harmless The CV Place and its licensee and licensors, and their employees, contractors, agents, officers, and directors, from and against any and all claims, damages, obligations, losses, liabilities, costs or debt, and expenses (including but not limited to attorney's fees), resulting from or arising out of a) your use and access of the Service, by you or any person using your account and password; b) a breach of these Terms, or c) Content posted on the Service.</p>
+
+        <h2 class="mt-4 h4 fw-bold">11. Modifications to Terms</h2>
+        <p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will provide at least 30 days' notice prior to any new terms taking effect via email or a notification within the Service. What constitutes a material change will be determined at our sole discretion. By continuing to access or use our Service after any revisions become effective, you agree to be bound by the revised terms.</p>
+
+        <h2 class="mt-4 h4 fw-bold">12. Governing Law and Dispute Resolution</h2>
+        <p>These Terms shall be governed and construed in accordance with the laws of the Federal Republic of Nigeria, without regard to its conflict of law provisions.</p>
+
+        <h2 class="mt-4 h4 fw-bold">13. Contact Information</h2>
+        <p>If you have any questions about these Terms, please contact us at: contactthecvplace@gmail.com</p>
+
+    </div> {# End container #}
+</div> {# End content-section #}
+{% endblock %}
