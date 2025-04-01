@@ -14,6 +14,19 @@ from wtforms.validators import ValidationError
 from flask_wtf.csrf import CSRFProtect
 from datetime import datetime, date
 
+# --- Load Paddle Configuration ---
+PADDLE_VENDOR_ID = os.environ.get('PADDLE_VENDOR_ID')
+PADDLE_API_KEY = os.environ.get('PADDLE_API_KEY')
+PADDLE_PRO_PRICE_ID = os.environ.get('PADDLE_PRO_PRICE_ID')
+# We'll need this later for webhook security
+PADDLE_WEBHOOK_SECRET = os.environ.get('PADDLE_WEBHOOK_SECRET')
+
+# Optional: Check if essential Paddle vars are set (won't crash app here)
+if not all([PADDLE_VENDOR_ID, PADDLE_API_KEY, PADDLE_PRO_PRICE_ID]):
+     print("WARNING: Paddle environment variables (Vendor ID, API Key, Price ID) are not fully set.")
+     print("         Subscription features will not work correctly.")
+# --- End Paddle Configuration ---
+
 # --- Define Tier Limits ---
 MAX_FORMS_FREE_TIER = 3
 MAX_SUBMISSIONS_FREE_TIER = 100
