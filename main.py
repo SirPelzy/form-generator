@@ -544,7 +544,7 @@ def subscribe_pro():
         'Authorization': f'Bearer {PADDLE_API_KEY}',
         'Content-Type': 'application/json',
     }
-     print(f"DEBUG: Attempting API calls to base URL: {api_base_url}")
+     
     # 5. Find or Create Paddle Customer ID
     paddle_customer_id = current_user.paddle_customer_code
     if not paddle_customer_id:
