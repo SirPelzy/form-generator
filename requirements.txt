@@ -9,4 +9,4 @@ psycopg2-binary>=2.9.5 # PostgreSQL driver
 Flask[cli]>=3.1.0 # Needed for running db commands in Railway shell
 email-validator>=1.1 # Using >=1.1 as it's commonly used with WTForms
 Flask-Limiter>=3.0 
-paddle-python-sdk>=1.0.0
+paddle-python-sdk>=1.6.0
