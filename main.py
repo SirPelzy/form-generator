@@ -520,6 +520,8 @@ def edit_field(field_id):
 
 # main.py -> Replace the whole function
 
+# main.py -> Replace the entire subscribe_pro function
+
 @app.route('/subscribe/pro')
 @login_required
 def subscribe_pro():
@@ -529,7 +531,7 @@ def subscribe_pro():
         return redirect(url_for('dashboard'))
 
     # 2. Check if Paddle configuration is available
-    if not PADDLE_API_KEY or not PADDLE_PRO_PRICE_ID: # Removed Vendor ID check, may not be needed for API key auth
+    if not PADDLE_API_KEY or not PADDLE_PRO_PRICE_ID:
         flash("Payment gateway configuration error. Cannot proceed.", "danger")
         print("ERROR: Missing PADDLE_API_KEY or PADDLE_PRO_PRICE_ID env vars")
         return redirect(url_for('pricing'))
@@ -544,7 +546,7 @@ def subscribe_pro():
         'Authorization': f'Bearer {PADDLE_API_KEY}',
         'Content-Type': 'application/json',
     }
-     
+
     # 5. Find or Create Paddle Customer ID
     paddle_customer_id = current_user.paddle_customer_code
     if not paddle_customer_id:
@@ -579,7 +581,14 @@ def subscribe_pro():
             db.session.rollback()
             print(f"ERROR: Failed to create/process Paddle customer for user {current_user.id}: {e}")
             # Try to get Paddle error detail if available
-            error_detail = response_data.get('error', {}).get('detail', str(e)) if 'response_data' in locals() else str(e)
+            error_detail = "Unknown error during customer setup" # Default
+            if 'response_data' in locals() and isinstance(response_data, dict):
+                 error_detail = response_data.get('error', {}).get('detail', str(e))
+            elif hasattr(e, 'response') and e.response is not None: # Handle potential HTTPError here too
+                 try: error_detail = e.response.json().get('error', {}).get('detail', e.response.text)
+                 except: error_detail = e.response.text # Fallback if response isn't JSON
+            else: error_detail = str(e)
+
             flash(f"Could not set up billing customer: {error_detail}", "danger")
             return redirect(url_for('pricing'))
         # --- End Customer Create ---
@@ -591,15 +600,13 @@ def subscribe_pro():
         "customer_id": paddle_customer_id, # Use the ID string
         "collection_mode": "automatic", # Essential for subscriptions
         "custom_data": {'user_id': str(current_user.id)} # Link back to our user
-        # currency_code might be inferred from the price_id
     }
     try:
         print(f"DEBUG: Creating Paddle transaction at {transaction_api_url} with payload: {transaction_payload}")
         response = requests.post(transaction_api_url, headers=headers, json=transaction_payload, timeout=15)
-        response.raise_for_status() # Check for HTTP errors
+        response.raise_for_status() # Check for HTTP errors (4xx/5xx)
 
         response_data = response.json()
-        # IMPORTANT: Verify this path to the checkout URL from Paddle API docs for transactions endpoint response
         checkout_url = response_data.get('data', {}).get('checkout', {}).get('url')
 
         if checkout_url:
@@ -610,16 +617,42 @@ def subscribe_pro():
             print(f"DEBUG: Paddle response missing checkout URL. Status: {response.status_code}, Response: {response_data}")
             raise Exception("Checkout URL not found in Paddle transaction response.")
 
-    except requests.exceptions.RequestException as e:
+    # --- START: Corrected Except Block Indentation ---
+    except requests.exceptions.HTTPError as e: # Catch HTTP errors (like 400) specifically
+        status_code = e.response.status_code
+        error_detail = f"HTTP {status_code} error"
+        try:
+            # Try to get Paddle's specific structured error
+            paddle_error = e.response.json().get('error', {})
+            error_type = paddle_error.get('type', 'unknown_type')
+            error_code = paddle_error.get('code', 'unknown_code')
+            error_info = paddle_error.get('detail', e.response.text) # Get detail or full text
+            error_detail = f"{error_info} (Type: {error_type}, Code: {error_code})"
+            print(f"ERROR: Paddle API HTTP Error ({status_code}): {error_detail}")
+            # Also print potential field errors if Paddle provides them
+            if 'errors' in paddle_error:
+                 print(f"DEBUG: Paddle Field Errors: {paddle_error['errors']}")
+        except json.JSONDecodeError:
+            # If response wasn't JSON
+            error_detail = e.response.text
+            print(f"ERROR: Paddle API HTTP Error ({status_code}): Non-JSON response: {error_detail}")
+        except Exception as json_e:
+             print(f"ERROR: Failed to parse Paddle error response: {json_e}")
+             error_detail = f"HTTP {status_code} Bad Request (failed to parse details)"
+
+        flash(f"Could not initiate subscription checkout: {error_detail}. Please check details or contact support.", "danger")
+        return redirect(url_for('pricing'))
+
+    except requests.exceptions.RequestException as e: # <-- CORRECTED INDENTATION (matches 'try' and previous 'except')
         print(f"ERROR: Network error creating Paddle transaction: {e}")
-        flash("Network error communicating with payment provider.", "danger")
+        flash("Network error communicating with payment provider. Please try again later.", "danger")
         return redirect(url_for('pricing'))
-    except Exception as e:
-        print(f"ERROR: Paddle transaction creation failed: {e}")
-         # Try to get Paddle error detail if available
-        error_detail = response_data.get('error', {}).get('detail', str(e)) if 'response_data' in locals() else str(e)
-        flash(f"Could not initiate subscription checkout: {error_detail}. Please try again or contact support.", "danger")
+
+    except Exception as e: # <-- CORRECTED INDENTATION (matches 'try' and previous 'except')
+        print(f"ERROR: Unexpected error during Paddle transaction creation: {e}")
+        flash("An unexpected error occurred initiating checkout. Please try again later.", "danger")
         return redirect(url_for('pricing'))
+    # --- END: Corrected Except Block Indentation ---
 
 # --- End of subscribe_pro function ---
 
