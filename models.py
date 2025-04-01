@@ -30,7 +30,8 @@ class User(db.Model, UserMixin):
     # --- END NEW FIELDS ---
 
     def __repr__(self):
-        return f"User('{self.username}', Plan: '{self.plan}', Status: '{self.subscription_status}')" # Updated repr
+        # Updated repr to include plan/status
+        return f"User('{self.username}', '{self.email}', Plan: '{self.plan}', Status: '{self.subscription_status}')"
 
 # Form Model
 class Form(db.Model):
