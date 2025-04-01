@@ -1,6 +1,6 @@
 # main.py
 import os
-from flask import Flask, render_template, redirect, url_for, flash, request
+from flask import Flask, render_template, redirect, url_for, flash, request, current_app
 import json
 import uuid
 from flask_sqlalchemy import SQLAlchemy
@@ -13,6 +13,8 @@ from flask_wtf.csrf import validate_csrf
 from wtforms.validators import ValidationError
 from flask_wtf.csrf import CSRFProtect
 from datetime import datetime, date
+from paddle_billing import Client, Environment, Options
+from paddle_billing.models import transaction_create
 
 # --- Load Paddle Configuration ---
 PADDLE_VENDOR_ID = os.environ.get('PADDLE_VENDOR_ID')
@@ -516,6 +518,67 @@ def edit_field(field_id):
                            title=f'Edit Field: {field_to_edit.label}',
                            field=field_to_edit, # Pass the field object to pre-fill form
                            allowed_field_types=ALLOWED_FIELD_TYPES) # For the type dropdown
+
+@app.route('/subscribe/pro')
+@login_required
+def subscribe_pro():
+    # 1. Check if user is already on the pro plan or has an active subscription
+    #    (Prevents accidental multiple subscriptions)
+    if current_user.plan == 'pro' and current_user.subscription_status == 'active':
+        flash("You are already subscribed to the Pro plan.", "info")
+        return redirect(url_for('dashboard')) # Or a billing management page later
+
+    # 2. Check if Paddle configuration is available
+    if not PADDLE_API_KEY or not PADDLE_PRO_PRICE_ID:
+        flash("Payment gateway configuration error. Cannot proceed.", "danger")
+        print("ERROR: Missing PADDLE_API_KEY or PADDLE_PRO_PRICE_ID env vars")
+        return redirect(url_for('pricing'))
+
+    # 3. Initialize Paddle Client
+    # Determine environment (Sandbox for testing/dev, Production for live)
+    # Assumes FLASK_ENV=production is set in Railway, otherwise defaults to Sandbox
+    paddle_env = Environment.production if os.environ.get('FLASK_ENV') == 'production' else Environment.sandbox
+    try:
+        paddle_client = Client(
+            PADDLE_API_KEY,
+            options=Options(paddle_env)
+        )
+        print(f"DEBUG: Initialized Paddle Client in {paddle_env} mode.") # Debug print
+    except Exception as e:
+        flash("Could not initialize payment gateway.", "danger")
+        print(f"ERROR: Paddle Client init failed: {e}")
+        return redirect(url_for('pricing'))
+
+    # 4. Create Paddle Transaction / Checkout Link
+    try:
+        # Structure based on Paddle Billing API - Verify with SDK docs if needed
+        checkout_payload = transaction_create.TransactionCreate(
+            items=[transaction_create.Item(price_id=PADDLE_PRO_PRICE_ID, quantity=1)],
+            # Pass customer email - Paddle usually creates/links customer automatically
+            # If user has existing paddle_customer_id, you might pass that instead
+            customer=transaction_create.Customer(email=current_user.email),
+            # Custom data helps link webhook events back to your user_id
+            custom_data={'user_id': str(current_user.id)},
+            # Billing details can be collected on Paddle page or passed here
+            # billing_details=transaction_create.BillingDetails(...)
+        )
+
+        print(f"DEBUG: Creating Paddle transaction for user {current_user.email} with price {PADDLE_PRO_PRICE_ID}") # Debug print
+        transaction = paddle_client.transactions.create(checkout_payload)
+
+        if transaction and transaction.checkout and transaction.checkout.url:
+            checkout_url = transaction.checkout.url
+            print(f"DEBUG: Paddle Checkout URL generated: {checkout_url}") # Debug print
+            # 5. Redirect user to Paddle Checkout
+            return redirect(checkout_url)
+        else:
+            raise Exception("Checkout URL not found in Paddle response.")
+
+    except Exception as e:
+        # Log the full error from Paddle for debugging
+        print(f"ERROR: Paddle transaction creation failed: {e}")
+        flash("Could not initiate subscription checkout. Please try again or contact support.", "danger")
+        return redirect(url_for('pricing'))
 
 @app.route('/pricing')
 def pricing():
