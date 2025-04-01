@@ -258,3 +258,23 @@ footer a.text-muted:hover {
     color: var(--primary-color) !important; /* Use primary color for hover */
 }
 
+/* Refined Feature Highlights Section (if needed) */
+.feature-highlights-section {
+  padding: 5rem 0; /* Ensure enough padding */
+}
+/* Ensure icons have bottom margin if text wraps */
+.feature-highlights-section .feature-icon {
+    margin-bottom: 0.75rem;
+}
+.feature-highlights-section h4 {
+    color: var(--text-color); /* Or use --accent-color */
+}
+.feature-highlights-section p.text-secondary {
+    color: var(--text-color) !important; /* Override default secondary if needed */
+    opacity: 0.8;
+    font-size: 1rem;
+}
+
+/* Style for alternating rows if needed, e.g., slightly different background */
+.feature-highlights-section .row:nth-child(odd) { background-color: #fdfdfd; }
+
