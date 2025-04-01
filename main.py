@@ -504,6 +504,11 @@ def edit_field(field_id):
                            field=field_to_edit, # Pass the field object to pre-fill form
                            allowed_field_types=ALLOWED_FIELD_TYPES) # For the type dropdown
 
+@app.route('/pricing')
+def pricing():
+    # Can add logic later to pass plan details if needed
+    return render_template('pricing.html', title='Pricing')
+
 if __name__ == '__main__':
     # Ensure database tables are created before running the app for the first time
     # with app.app_context():
