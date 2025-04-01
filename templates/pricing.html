@@ -1,0 +1,67 @@
+{# templates/pricing.html #}
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="content-section">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold">Simple, Transparent Pricing</h1>
+        <p class="lead text-muted">Choose the plan that fits your needs. Start free!</p>
+    </div>
+
+    {# Re-use the pricing row structure from home.html #}
+    <div class="row justify-content-center">
+        {# Free Tier Card #}
+        <div class="col-lg-5 col-md-6">
+            <div class="card mb-4 shadow">
+                <div class="card-header bg-white py-3 text-center">
+                    <h3 class="my-0 fw-normal">Free</h3>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title text-center text-muted mb-3">Perfect for getting started</h5>
+                    <ul class="list-unstyled mt-3 mb-4">
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>3</strong> Forms</li>
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>100</strong> Submissions / Month</li>
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Core Form Builder</li>
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Embedding</li>
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Dashboard View</li>
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-info-circle me-2"></i>Powered by FormGen branding</li>
+                    </ul>
+                    <div class="d-grid">
+                        {# Link to register if not logged in, dashboard if logged in? Or always register? #}
+                        {% if current_user.is_authenticated %}
+                            <button class="btn btn-outline-secondary" disabled>Your Current Plan</button>
+                        {% else %}
+                            <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started Free</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {# Pro Tier Card #}
+        <div class="col-lg-5 col-md-6">
+            <div class="card mb-4 shadow border-primary"> {# Highlight Pro tier #}
+                <div class="card-header bg-primary text-white py-3 text-center"> {# Highlight header #}
+                    <h3 class="my-0 fw-normal">Pro</h3>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title text-center text-muted mb-3">For growing needs & businesses</h5>
+                    <h4 class="card-title text-center mb-3">~$5 / month <small class="text-muted">USD</small></h4>
+                    <ul class="list-unstyled mt-3 mb-4">
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>15</strong> Forms</li> {# Example Limit #}
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>1,000</strong> Submissions / Month</li> {# Example Limit #}
+                         <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Remove "Powered By" Branding</li>
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Email Notifications</li>
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>All Free Features</li>
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-plus-circle me-2"></i>More features coming...</li>
+                    </ul>
+                     <div class="d-grid">
+                        <button class="btn btn-primary" disabled>Upgrade (Coming Soon)</button>
+                    </div>
+                    <p class="text-center mt-2 small text-muted">Conceptual pricing. Payment integration not yet available.</p>
+                </div>
+            </div>
+        </div>
+    </div> {# End row #}
+</div> {# End content-section #}
+{% endblock %}
