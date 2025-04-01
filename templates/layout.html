@@ -126,8 +126,26 @@
 {# <script>
 function copyEmbedCode(textAreaId, buttonElement) { /* ... */ }
 function copyDirectLink(inputId, buttonElement) { /* ... */ }
-</script> #}
-{# --- End Scripts --- #}
+{# --- START: Add this script for auto-dismissing alerts --- #}
+    <script>
+      // Wait for the entire page to load
+      document.addEventListener('DOMContentLoaded', (event) => {
+        // Find all alert elements that are dismissible and currently shown
+        const autoDismissAlerts = document.querySelectorAll('.alert-dismissible.show');
 
+        autoDismissAlerts.forEach(alertElement => {
+          // Set a timeout to close the alert after 5 seconds (5000 milliseconds)
+          setTimeout(() => {
+            // Use Bootstrap's Alert instance to close it gracefully
+            const bsAlert = bootstrap.Alert.getOrCreateInstance(alertElement);
+            if (bsAlert) {
+              bsAlert.close(); // Trigger the close method
+            }
+          }, 5000); // Adjust time here (in milliseconds) - e.g., 3000 for 3 seconds
+        });
+      });
+    </script>
+    {# --- END: Auto-dismissing alert script --- #}
+    
 </body>
 </html>
