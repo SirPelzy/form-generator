@@ -30,7 +30,7 @@
             <li class="nav-item"><a class="nav-link" href="/#features">Features</a></li> {# Use /#features for home #}
             <li class="nav-item"><a class="nav-link" href="/#use-cases">Use Cases</a></li>{# Use /#use-cases for home #}
             <li class="nav-item"><a class="nav-link" href="#">Templates</a></li>
-            <li class="nav-item"><a class="nav-link" href="#">Pricing</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('pricing') }}">Pricing</a></li>
           </ul>
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
             {% if current_user.is_authenticated %}
