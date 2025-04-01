@@ -299,57 +299,60 @@ def public_form(form_key):
 
     # --- Handle form SUBMISSION (POST request) ---
     if request.method == 'POST':
-        # --- START: Submission Limit Check ---
-    form_owner = form.author # Get the owner of the form being submitted to
-    # For now, assume all users are on the free tier
-    is_free_tier = True # TODO: Replace with check on user's actual plan later
-    if is_free_tier:
-        today = date.today()
-        start_of_month = datetime(today.year, today.month, 1)
+        # --- START: Submission Limit Check --- (Indented Level 1)
+        form_owner = form.author # Get the owner of the form being submitted to
+        # For now, assume all users are on the free tier
+        is_free_tier = True # TODO: Replace with check on user's actual plan later
+        if is_free_tier: # (Indented Level 2)
+            # ---> This block indented (Level 3)
+            today = date.today()
+            start_of_month = datetime(today.year, today.month, 1)
 
-        # Count submissions this month for ALL forms owned by this user
-        submission_count = db.session.query(Submission.id).join(Form).filter(
-            Form.user_id == form_owner.id,
-            Submission.submitted_at >= start_of_month
-        ).count() # More efficient count
+            # Count submissions this month for ALL forms owned by this user
+            submission_count = db.session.query(Submission.id).join(Form).filter(
+                Form.user_id == form_owner.id,
+                Submission.submitted_at >= start_of_month
+            ).count() # More efficient count
 
-        if submission_count >= MAX_SUBMISSIONS_FREE_TIER:
-            # Limit reached - show error and re-render form
-            # NOTE: This prevents the submission from being saved
-            print(f"User {form_owner.id} hit submission limit ({submission_count}/{MAX_SUBMISSIONS_FREE_TIER}) for form {form.id}")
-            # Use a specific error key for the template if needed
-            errors = {'_limit_error': f"This form cannot accept submissions right now (monthly limit reached)."}
-            # Re-render form, passing back submitted data and error
-            # Need fields for re-rendering template correctly
-            fields = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
-            return render_template('public_form.html', form=form, fields=fields, errors=errors, submitted_data=request.form)
-    # --- END: Submission Limit Check ---
-                
-        # Fetch the fields associated with this form again for validation
+            if submission_count >= MAX_SUBMISSIONS_FREE_TIER: # (Indented Level 3)
+                # ---> This block indented (Level 4)
+                # Limit reached - show error and re-render form
+                # NOTE: This prevents the submission from being saved
+                print(f"User {form_owner.id} hit submission limit ({submission_count}/{MAX_SUBMISSIONS_FREE_TIER}) for form {form.id}")
+                # Use a specific error key for the template if needed
+                errors = {'_limit_error': f"This form cannot accept submissions right now (monthly limit reached)."}
+                # Re-render form, passing back submitted data and error
+                # Need fields for re-rendering template correctly
+                fields = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
+                return render_template('public_form.html', form=form, fields=fields, errors=errors, submitted_data=request.form)
+        # --- END: Submission Limit Check ---
+
+        # Fetch the fields associated with this form again for validation (Indented Level 2)
         fields = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
         submitted_data = request.form # Get submitted data
         errors = {} # Dictionary to store validation errors
-        
-        # --- Server-Side Validation Loop ---
-        for field in fields:
+
+        # --- Server-Side Validation Loop --- (Indented Level 2)
+        for field in fields: # (Indented Level 3)
             field_name = f"field_{field.id}"
             value = submitted_data.get(field_name)
 
-            if field.required:
+            if field.required: # (Indented Level 4)
                 is_missing = False
-                if field.field_type == 'checkbox':
+                if field.field_type == 'checkbox': # (Indented Level 5)
                     # Required checkbox must be present in the form data
-                    if field_name not in submitted_data:
+                    if field_name not in submitted_data: # (Indented Level 6)
                         is_missing = True
-                elif not value: # Check if value is None or empty string for others
+                elif not value: # (Indented Level 5) Check if value is None or empty string for others
                     is_missing = True
 
-                if is_missing:
-                    errors[field_name] = "This field is required."
+                if is_missing: # (Indented Level 5)
+                    errors[field_name] = "This field is required." # (Indented Level 6)
             # --- Add other validations later if needed (e.g., email format) ---
 
-        # --- Check if any errors occurred ---
+        # --- Check if any errors occurred --- (Indented Level 2)
         if errors:
+             # ---> This block indented (Level 3)
             flash('Please correct the errors below.', 'warning')
             # Re-render the form template, passing errors and submitted data back
             return render_template('public_form.html',
@@ -358,12 +361,13 @@ def public_form(form_key):
                                    errors=errors, # Pass errors dict
                                    submitted_data=submitted_data) # Pass submitted data
 
-        # --- If validation passed, proceed to save submission ---
+        # --- If validation passed, proceed to save submission --- (Indented Level 2)
         submission_data_dict = {}
-        try:
-            for field in fields:
+        try: # (Indented Level 3)
+             # ---> This block indented (Level 4)
+            for field in fields: # (Indented Level 5)
                 field_name = f"field_{field.id}"
-                if field.field_type == 'checkbox':
+                if field.field_type == 'checkbox': # (Indented Level 6)
                     value = 'true' if field_name in submitted_data else 'false'
                 else:
                     value = submitted_data.get(field_name)
@@ -377,7 +381,8 @@ def public_form(form_key):
             # Redirect after successful submission (prevents re-posting on refresh)
             return redirect(url_for('public_form', form_key=form_key))
 
-        except Exception as e:
+        except Exception as e: # (Indented Level 3)
+             # ---> This block indented (Level 4)
             db.session.rollback()
             flash(f'An error occurred while saving the submission. Error: {e}', 'danger')
             print(f"Error saving submission for form {form.id}: {e}")
@@ -388,15 +393,17 @@ def public_form(form_key):
                                    fields=fields,
                                    errors={"_save_error": "Could not save submission."}, # Generic save error
                                    submitted_data=submitted_data)
+        # --- End of try/except for saving ---
+    # --- End of 'if request.method == POST' block ---
 
-    # --- Display the form (GET request) ---
+    # --- Display the form (GET request) --- (Indented Level 1)
     # Fetch fields for display if it's a GET request
     fields_for_display = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
     return render_template('public_form.html',
                            form=form,
                            fields=fields_for_display,
-                           errors={}, # <-- Add this: Pass empty dict for errors
-                           submitted_data={}) # <-- Add this: Pass empty dict for submitted_data
+                           errors={}, # Pass empty dict for errors
+                           submitted_data={}) # Pass empty dict for submitted_data
 
 # --- VIEW SUBMISSIONS Route ---
 @app.route('/form/<int:form_id>/submissions')
