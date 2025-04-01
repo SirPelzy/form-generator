@@ -95,6 +95,13 @@
         </form>
 
     </div> {# End form-container #}
+    
+    {# --- START: Add Branding for Free Tier --- #}
+{# TODO: Add conditional logic later based on user plan #}
+<div class="text-center text-muted mt-4 mb-3 small">
+    Powered by <a href="{{ url_for('home') }}" class="text-muted text-decoration-none">FormGen</a> {# Replace FormGen #}
+</div>
+{# --- END: Branding --- #}
 
     {# *** CHECK 6: Is this Bootstrap JS link present and correct? *** #}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
