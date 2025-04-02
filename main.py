@@ -538,6 +538,7 @@ def pricing():
 
     # Get user email only if authenticated (for pre-filling checkout)
     user_email = current_user.email if current_user.is_authenticated else None
+    is_authenticated = current_user.is_authenticated
 
     if not client_token or not pro_price_id:
         print("ERROR: PADDLE_CLIENT_SIDE_TOKEN or PADDLE_PRO_PRICE_ID missing from env vars!")
@@ -550,6 +551,7 @@ def pricing():
         client_token=client_token,
         pro_price_id=pro_price_id,
         user_email=user_email
+        is_authenticated=is_authenticated
     )
 
 # main.py -> Replace the entire old paddle_webhook function with this one
