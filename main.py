@@ -546,7 +546,7 @@ def pricing():
 
 # main.py -> Replace the entire old paddle_webhook function with this one
 @app.route('/webhooks/paddle', methods=['POST'])
-# @csrf.exempt # Uncomment this if CSRF protection interferes later
+@csrf.exempt # Uncomment this if CSRF protection interferes later
 def paddle_webhook():
     # 1. Verify Signature (CRITICAL FOR SECURITY)
     webhook_secret = os.environ.get('PADDLE_WEBHOOK_SECRET')
