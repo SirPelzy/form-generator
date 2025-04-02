@@ -11,7 +11,7 @@
                 <div class="card-body">
                     <div class="text-center mb-4">
                         {# Placeholder profile image #}
-                        <img src="https://via.placeholder.com/150/254441/FFFFFF?text={{ user.username[0]|upper }}" class="rounded-circle mb-3" alt="Profile Picture Placeholder" width="120" height="120">
+                        <img src="{{ url_for('static', filename='images/default-avatar.png') }}" class="rounded-circle mb-3 img-thumbnail" alt="Default Profile Picture" width="120" height="120" style="object-fit: cover;">
                          {# Using first letter of username for placeholder #}
                     </div>
                     <dl class="row">
