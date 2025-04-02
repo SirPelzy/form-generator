@@ -3,21 +3,20 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="content-section">
+<div class="content-section py-5"> {# Added padding directly here #}
     <div class="text-center mb-5">
         <h1 class="display-5 fw-bold">Simple, Transparent Pricing</h1>
         <p class="lead text-muted">Choose the plan that fits your needs. Start free!</p>
     </div>
 
-    {# Re-use the pricing row structure from home.html #}
     <div class="row justify-content-center">
         {# Free Tier Card #}
         <div class="col-lg-5 col-md-6">
-            <div class="card mb-4 shadow">
+            <div class="card mb-4 shadow h-100"> {# Added h-100 for equal height #}
                 <div class="card-header bg-white py-3 text-center">
                     <h3 class="my-0 fw-normal">Free</h3>
                 </div>
-                <div class="card-body">
+                <div class="card-body d-flex flex-column"> {# Use flex for button at bottom #}
                     <h5 class="card-title text-center text-muted mb-3">Perfect for getting started</h5>
                     <ul class="list-unstyled mt-3 mb-4">
                         <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>3</strong> Forms</li>
@@ -25,10 +24,9 @@
                         <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Core Form Builder</li>
                         <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Embedding</li>
                         <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Dashboard View</li>
-                        <li class="d-flex align-items-center mb-2"><i class="bi bi-info-circle me-2"></i>Powered by FormGen branding</li>
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-info-circle text-muted me-2"></i>Powered by FormGen branding</li> {# Use text-muted icon #}
                     </ul>
-                    <div class="d-grid">
-                        {# Link to register if not logged in, dashboard if logged in? Or always register? #}
+                    <div class="d-grid mt-auto"> {# mt-auto pushes button down #}
                         {% if current_user.is_authenticated %}
                             <button class="btn btn-outline-secondary" disabled>Your Current Plan</button>
                         {% else %}
@@ -38,25 +36,29 @@
                 </div>
             </div>
         </div>
+
         {# Pro Tier Card #}
         <div class="col-lg-5 col-md-6">
-            <div class="card mb-4 shadow border-primary"> {# Highlight Pro tier #}
-                <div class="card-header bg-primary text-white py-3 text-center"> {# Highlight header #}
+            <div class="card mb-4 shadow border-primary h-100"> {# Added h-100 for equal height #}
+                <div class="card-header bg-primary text-white py-3 text-center">
                     <h3 class="my-0 fw-normal">Pro</h3>
                 </div>
-                <div class="card-body">
+                <div class="card-body d-flex flex-column"> {# Use flex for button at bottom #}
                     <h5 class="card-title text-center text-muted mb-3">For growing needs & businesses</h5>
                     <h4 class="card-title text-center mb-3">~$5 / month <small class="text-muted">USD</small></h4>
                     <ul class="list-unstyled mt-3 mb-4">
-                        <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>15</strong> Forms</li> {# Example Limit #}
-                        <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>1,000</strong> Submissions / Month</li> {# Example Limit #}
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>15</strong> Forms</li>
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>1,000</strong> Submissions / Month</li>
                          <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Remove "Powered By" Branding</li>
                         <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Email Notifications</li>
                         <li class="d-flex align-items-center mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>All Free Features</li>
-                        <li class="d-flex align-items-center mb-2"><i class="bi bi-plus-circle me-2"></i>More features coming...</li>
+                        <li class="d-flex align-items-center mb-2"><i class="bi bi-plus-circle text-muted me-2"></i>More features coming...</li> {# Use text-muted icon #}
                     </ul>
-                     <div class="d-grid">
-                        <button class="btn btn-primary" disabled>Upgrade (Coming Soon)</button>
+                     <div class="d-grid mt-auto"> {# mt-auto pushes button down #}
+                        {# --- UPDATED BUTTON --- #}
+                        {# Give it an ID, enable it, change text #}
+                        <button class="btn btn-primary" id="upgrade-pro-button">Upgrade to Pro</button>
+                        {# --- END UPDATE --- #}
                     </div>
                     <p class="text-center mt-2 small text-muted">Conceptual pricing. Payment integration not yet available.</p>
                 </div>
@@ -65,3 +67,67 @@
     </div> {# End row #}
 </div> {# End content-section #}
 {% endblock %}
+
+
+{# =========================================================== #}
+{# === START: ADD JAVASCRIPT BLOCK FOR PADDLE CHECKOUT ===== #}
+{# =========================================================== #}
+{% block scripts %}
+{{ super() }} {# Includes scripts from layout.html if needed #}
+<script>
+    // Use DOMContentLoaded to ensure elements exist, although Paddle:Initialized is better
+    document.addEventListener('DOMContentLoaded', (event) => {
+        // Get data passed from Flask route (ensure these variables are passed in main.py /pricing route)
+        const proPriceId = "{{ pro_price_id or '' }}"; // Get Price ID from backend
+        const userEmail = "{{ user_email or '' }}"; // Get email from backend (optional prefill)
+        const upgradeButton = document.getElementById('upgrade-pro-button');
+
+        // Check if Paddle was initialized (check variable set in layout.html)
+        if (typeof Paddle === 'undefined') {
+             console.error('Paddle object not found. Ensure Paddle.js loaded and initialized.');
+             if(upgradeButton){
+                upgradeButton.innerText = 'Error: Payments Unavailable';
+                upgradeButton.disabled = true;
+             }
+             return; // Stop if Paddle isn't ready
+        }
+
+        // Proceed if button and Price ID exist
+        if (upgradeButton && proPriceId) {
+            upgradeButton.addEventListener('click', function() {
+                console.log('Upgrade button clicked. Opening Paddle Checkout...');
+                let checkoutOptions = {
+                    items: [{ priceId: proPriceId, quantity: 1 }]
+                    // Optionally add settings like locale: 'en' if needed
+                    // settings: { theme: 'light' }
+                };
+
+                // Prefill email only if we have one
+                if (userEmail) {
+                    checkoutOptions.customer = { email: userEmail };
+                    console.log('Prefilling email:', userEmail);
+                }
+                // Add custom data to link back to user ID (useful for webhooks)
+                // Ensure current_user is available or pass user_id separately from backend
+                {% if current_user and current_user.is_authenticated %}
+                    checkoutOptions.customData = { user_id: '{{ current_user.id }}' };
+                    console.log('Adding custom data:', checkoutOptions.customData);
+                {% endif %}
+
+                // Open the Paddle Checkout Overlay
+                Paddle.Checkout.open(checkoutOptions);
+            });
+        } else {
+            // Handle missing button or price ID
+            console.error('Upgrade button or Price ID not found/passed from backend.');
+            if (upgradeButton) {
+                upgradeButton.innerText = 'Error: Plan Unavailable';
+                upgradeButton.disabled = true;
+            }
+        }
+    });
+</script>
+{% endblock scripts %}
+{# =========================================================== #}
+{# === END: JAVASCRIPT BLOCK ================================= #}
+{# =========================================================== #}
