@@ -1,0 +1,62 @@
+{# templates/subscription.html #}
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="content-section">
+     <div class="col-md-8 col-lg-7 mx-auto"> {# Center and constrain width #}
+        <h2 class="mb-4">Manage Subscription</h2>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">Current Plan</div>
+            <div class="card-body">
+                <h4 class="card-title">Your Plan:
+                    <span class="badge {% if user.plan == 'pro' %}bg-primary{% else %}bg-secondary{% endif %}">
+                        {{ user.plan | capitalize }}
+                    </span>
+                </h4>
+                <p class="card-text text-muted">
+                    Status: {{ user.subscription_status | capitalize if user.subscription_status else 'N/A' }}
+                    {# TODO: Add expiry/renewal date later if available from Paddle webhooks #}
+                </p>
+
+                {# Conditional Buttons #}
+                {% if user.plan == 'free' %}
+                    {# User is Free - Show Upgrade Button #}
+                    <a href="{{ url_for('pricing') }}" class="btn btn-success">Upgrade to Pro</a>
+                    <p class="small text-muted mt-2">Upgrade to unlock more forms, higher submission limits, and remove branding.</p>
+                {% elif user.plan == 'pro' and user.subscription_status == 'active' %}
+                    {# User is Pro and Active - Show Management Links from Paddle #}
+                    <p>Manage your subscription directly via Paddle:</p>
+                    {% if user.paddle_update_url %}
+                        <a href="{{ user.paddle_update_url }}" class="btn btn-outline-primary me-2" target="_blank">Update Payment Method</a>
+                    {% endif %}
+                     {% if user.paddle_cancel_url %}
+                        <a href="{{ user.paddle_cancel_url }}" class="btn btn-outline-danger" target="_blank">Cancel Subscription</a>
+                     {% endif %}
+                     {% if not user.paddle_update_url and not user.paddle_cancel_url %}
+                         <p class="small text-muted">Subscription management links will appear here shortly after activation.</p>
+                     {% endif %}
+                {% elif user.plan == 'pro' and user.subscription_status in ['past_due', 'paused'] %}
+                    {# User is Pro but Inactive (Past Due / Paused) #}
+                    <p class="text-danger">Your subscription is currently {{ user.subscription_status }}.</p>
+                    {% if user.paddle_update_url %}
+                        <a href="{{ user.paddle_update_url }}" class="btn btn-warning me-2" target="_blank">Update Payment Method</a>
+                         <p class="small text-muted mt-2">Please update your payment method to reactivate your Pro plan.</p>
+                    {% else %}
+                         <p class="small text-muted mt-2">Please check your Paddle account to resolve the issue.</p>
+                    {% endif %}
+                {% elif user.subscription_status == 'canceled' %}
+                     <p>Your Pro subscription has been canceled. You can re-subscribe if needed.</p>
+                     <a href="{{ url_for('pricing') }}" class="btn btn-success">View Plans</a>
+                {% else %}
+                    {# Default case - might be inactive free etc. #}
+                     <a href="{{ url_for('pricing') }}" class="btn btn-outline-primary">View Plans</a>
+                {% endif %}
+
+            </div>
+        </div>
+         <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-secondary mt-3">&laquo; Back to Dashboard</a>
+    </div>{# End col #}
+</div>{# End content-section #}
+{% endblock %}
