@@ -1,6 +1,8 @@
 # main.py
 import os
 from flask import Flask, render_template, redirect, url_for, flash, request, current_app
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import json
 import uuid
 import hmac
@@ -60,6 +62,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 csrf = CSRFProtect(app)
 # You could also use CSRFProtect().init_app(app) later, but this is common.
 # --- END CSRF Initialization ---
+
+# --- START: Ensure this Limiter block is PRESENT and HERE ---
+limiter = Limiter(
+    get_remote_address, # Use IP address to identify users for limiting
+    app=app,
+    default_limits=["200 per day", "50 per hour"], # Default limits for all routes
+    storage_uri="memory://", # Use in-memory storage (Note: limits reset on app restart)
+)
+# --- END: Limiter Initialization ---
 
 # Initialize Extensions
 # db defined in models.py, initialize it with the app
