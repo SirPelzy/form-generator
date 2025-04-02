@@ -28,23 +28,25 @@
 
                 {# --- This is the main block for Pro/Active users --- #}
                 {% elif user.plan == 'pro' and user.subscription_status == 'active' %}
-                    {# Removed duplicate elif line that was here #}
+                    {# --- START: Updated Pro/Active Block --- #}
                     <p>Manage your payment method or cancel your subscription directly via Paddle's secure portal:</p>
 
-                    {# Conditionally show Update Payment Method button #}
-                    {% if user.paddle_update_url %} {# Correct indent level #}
-                        <a href="{{ user.paddle_update_url }}" class="btn btn-outline-primary me-2" target="_blank" rel="noopener noreferrer">Update Payment Method</a>
+                    {# Use update_url variable passed from the route #}
+                    {% if update_url %}
+                    <a href="{{ update_url }}" class="btn btn-outline-primary me-2" target="_blank" rel="noopener noreferrer">Update Payment Method</a>
                     {% endif %}
 
-                    {# Conditionally show Cancel Subscription button #}
-                    {% if user.paddle_cancel_url %} {# Correct indent level #}
-                        <a href="{{ user.paddle_cancel_url }}" class="btn btn-outline-danger" target="_blank" rel="noopener noreferrer">Cancel Subscription</a>
-                    {% endif %}
+                    {# Use cancel_url variable passed from the route #}
+                     {% if cancel_url %}
+                     <a href="{{ cancel_url }}" class="btn btn-outline-danger" target="_blank" rel="noopener noreferrer">Cancel Subscription</a>
+                     {% endif %}
 
-                    {# Show fallback message ONLY if NEITHER URL is available yet #}
-                    {% if not user.paddle_update_url and not user.paddle_cancel_url %} {# Correct indent level #}
-                         <p class="small text-muted mt-3">Subscription management links are being generated and will appear here shortly. Please check back in a few moments.</p>
-                    {% endif %}
+                     {# Show fallback message ONLY if NEITHER URL was successfully fetched by the backend #}
+                     {% if not update_url and not cancel_url %}
+                     <p class="small text-muted mt-3">Could not retrieve subscription management links at this time. Please try again later or contact support.</p>
+                     {% endif %}
+                    {# --- END: Updated Pro/Active Block --- #}
+                    
 
                 {# --- Condition for Pro but Inactive (Past Due / Paused) --- #}
                 {% elif user.plan == 'pro' and user.subscription_status in ['past_due', 'paused'] %} {# Correct indent level #}
