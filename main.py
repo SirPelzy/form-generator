@@ -550,7 +550,7 @@ def pricing():
         title='Pricing',
         client_token=client_token,
         pro_price_id=pro_price_id,
-        user_email=user_email
+        user_email=user_email,
         is_authenticated=is_authenticated
     )
 
