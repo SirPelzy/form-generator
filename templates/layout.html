@@ -141,7 +141,21 @@
 
           // Initialize Paddle with the token
           console.log("Calling Paddle.Initialize with token:", paddleToken);
-          Paddle.Initialize({ token: paddleToken });
+          Paddle.Initialize({ 
+              token: paddleToken,
+              // START: Add Event Callback for redirect
+            eventCallback: function(data) {
+              console.log("Paddle Event Received:", data); // Log all events
+              // Check for event name indicating successful completion
+              // Common examples: 'checkout.completed', 'transaction.completed'. Verify exact name in Paddle.js docs!
+              if (data && (data.name === 'checkout.completed' || data.name === 'transaction.completed')) {
+                 console.log('Checkout/Transaction Completed event detected via Paddle.js. Redirecting to dashboard...');
+                 // Redirect to dashboard (using relative path is simpler here)
+                 window.location.href = '/dashboard';
+              }
+            }
+            // END: Add Event Callback
+          });
           console.log("Paddle Initialized call finished."); // Confirm call completed
 
         } catch (error) {
