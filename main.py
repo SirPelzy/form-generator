@@ -663,16 +663,11 @@ def paddle_webhook():
                 print(f"INFO: Processing {event_type} for user {user.id}")
                 subscription_id = event_payload.get('id')
                 status = event_payload.get('status') # Should be 'active'
-                management_urls = event_payload.get('management_urls', {})
-                update_url = management_urls.get('update_payment_method')
-                cancel_url = management_urls.get('cancel')
 
                 # Update user record in your database
                 user.plan = 'pro' # Assuming only one paid plan for now
                 if status: user.subscription_status = status
                 if subscription_id: user.paddle_subscription_id = subscription_id
-                if update_url: user.paddle_update_url = update_url
-                if cancel_url: user.paddle_cancel_url = cancel_url
                 needs_commit = True
                 print(f"INFO: User {user.id} plan set to Pro (Paddle Sub ID: {subscription_id})")
 
@@ -702,11 +697,6 @@ def paddle_webhook():
                     new_status = event_payload.get('status')
                     if new_status: user.subscription_status = new_status
                     # Update management URLs as they might change
-                    management_urls = event_payload.get('management_urls', {})
-                    update_url = management_urls.get('update_payment_method')
-                    cancel_url = management_urls.get('cancel')
-                    if update_url: user.paddle_update_url = update_url
-                    if cancel_url: user.paddle_cancel_url = cancel_url
                     needs_commit = True
                     print(f"INFO: User {user.id} subscription status updated to {new_status} (via updated event).")
                 else:
@@ -753,11 +743,61 @@ def profile():
     # The current_user object is automatically available via Flask-Login
     return render_template('profile.html', title='Your Profile', user=current_user)
 
+# main.py -> Replace the existing subscription_management route
+
 @app.route('/subscription')
 @login_required
 def subscription_management():
-    # The current_user object contains the plan and Paddle URLs now
-    return render_template('subscription.html', title='Manage Subscription', user=current_user)
+    # User object is available via current_user
+
+    # Initialize variables for management URLs
+    paddle_update_url = None
+    paddle_cancel_url = None
+
+    # Only attempt to fetch URLs if user has an active/paused/past_due Paddle subscription ID
+    if current_user.paddle_subscription_id and current_user.plan == 'pro':
+        print(f"DEBUG: User {current_user.id} has paddle sub ID {current_user.paddle_subscription_id}. Fetching management URLs.")
+
+        # Determine Paddle API Base URL
+        is_production = os.environ.get('FLASK_ENV') == 'production'
+        api_base_url = "https://api.paddle.com" if is_production else "https://sandbox-api.paddle.com"
+        subscription_api_url = f"{api_base_url}/subscriptions/{current_user.paddle_subscription_id}"
+
+        # Define Headers
+        headers = { 'Authorization': f'Bearer {PADDLE_API_KEY}' } # Assumes PADDLE_API_KEY is loaded
+
+        try:
+            # Make API call to GET subscription details
+            response = requests.get(subscription_api_url, headers=headers, timeout=10)
+            response.raise_for_status() # Check for HTTP errors
+
+            response_data = response.json()
+
+            # Extract management URLs from the response (using .get for safety)
+            management_urls = response_data.get('data', {}).get('management_urls', {})
+            paddle_update_url = management_urls.get('update_payment_method')
+            paddle_cancel_url = management_urls.get('cancel')
+            print(f"DEBUG: Retrieved management URLs: Update={paddle_update_url}, Cancel={paddle_cancel_url}")
+
+        except requests.exceptions.RequestException as e:
+             print(f"ERROR: Network error fetching Paddle subscription details: {e}")
+             flash("Could not retrieve subscription management links due to a network error.", "warning")
+        except Exception as e:
+             print(f"ERROR: Failed to fetch/parse Paddle subscription details: {e}")
+             # Log potential structured error from Paddle if available in response
+             if hasattr(e, 'response') and e.response is not None:
+                 try: print(f"DEBUG: Paddle Error Response: {e.response.text}")
+                 except: pass # Ignore if can't get text
+             flash("Could not retrieve subscription management links.", "warning")
+
+    # Render template, passing the user object AND the potentially fetched URLs
+    return render_template(
+        'subscription.html',
+        title='Manage Subscription',
+        user=current_user,
+        update_url=paddle_update_url, # Pass fetched URL (or None)
+        cancel_url=paddle_cancel_url   # Pass fetched URL (or None)
+    )
 
 @app.route('/terms')
 def terms_of_service():
