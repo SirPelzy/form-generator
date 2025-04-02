@@ -80,6 +80,7 @@
         // Get data passed from Flask route (ensure these variables are passed in main.py /pricing route)
         const proPriceId = "{{ pro_price_id or '' }}"; // Get Price ID from backend
         const userEmail = "{{ user_email or '' }}"; // Get email from backend (optional prefill)
+        const isLoggedIn = {{ is_authenticated | tojson }}; // Use tojson filter for boolean
         const upgradeButton = document.getElementById('upgrade-pro-button');
 
         // Check if Paddle was initialized (check variable set in layout.html)
