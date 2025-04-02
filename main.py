@@ -137,16 +137,17 @@ def dashboard():
     user_forms = Form.query.filter_by(user_id=current_user.id).order_by(Form.created_at.desc()).all()
     return render_template('dashboard.html', title='Dashboard', user_forms=user_forms)
 
+# Create Form Route #
 @app.route('/create_form', methods=['GET', 'POST'])
 @login_required
 def create_form():
     if request.method == 'POST':
         # *** START: Form Limit Check ***
-        # Assuming only free tier exists for now
-        current_form_count = Form.query.filter_by(user_id=current_user.id).count()
-        if current_form_count >= MAX_FORMS_FREE_TIER:
-            flash(f"You have reached the limit of {MAX_FORMS_FREE_TIER} forms for the free tier. Delete an existing form or upgrade for more.", "warning")
-            return redirect(url_for('dashboard')) # Redirect back to dashboard
+        if current_user.plan == 'free': # Check the user's plan attribute
+            current_form_count = Form.query.filter_by(user_id=current_user.id).count()
+            if current_form_count >= MAX_FORMS_FREE_TIER:
+                flash(f"You have reached the limit of {MAX_FORMS_FREE_TIER} forms for the free tier. Delete an existing form or upgrade for more.", "warning")
+                return redirect(url_for('dashboard')) # Or pricing page
         # *** END: Form Limit Check ***
         
         form_title = request.form.get('form_title')
@@ -311,18 +312,33 @@ def delete_form(form_id):
 
 # --- PUBLIC FORM DISPLAY & SUBMISSION Route ---
 @app.route('/form/<string:form_key>', methods=['GET', 'POST'])
+@limiter.limit("60 per hour", methods=['POST']) # Keep rate limit
 def public_form(form_key):
     # Find the form by its unique key, return 404 if not found
-    form = Form.query.filter_by(unique_key=form_key).first_or_404()
+    # Eager load the author to avoid extra query later when checking plan
+    form = Form.query.options(db.joinedload(Form.author)).filter_by(unique_key=form_key).first_or_404()
+    # Fetch fields once for both GET and POST logic if needed for rendering
+    fields = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
 
     # --- Handle form SUBMISSION (POST request) ---
     if request.method == 'POST':
-        # --- START: Submission Limit Check --- (Indented Level 1)
-        form_owner = form.author # Get the owner of the form being submitted to
-        # For now, assume all users are on the free tier
-        is_free_tier = True # TODO: Replace with check on user's actual plan later
-        if is_free_tier: # (Indented Level 2)
-            # ---> This block indented (Level 3)
+        # --- CSRF Check ---
+        try:
+            validate_csrf(request.form.get('csrf_token'))
+        except ValidationError:
+            flash('Invalid submission token.', 'warning')
+            # Pass necessary variables back for re-rendering
+            return render_template('public_form.html', form=form, fields=fields, errors={}, submitted_data=request.form)
+
+        # --- Initialize variables ---
+        submitted_data = request.form
+        errors = {} # Define errors dict before checks
+        limit_reached = False
+        form_owner = form.author # Get owner (already loaded)
+
+        # --- START: Updated Submission Limit Check ---
+        # Check limits ONLY if the form owner exists and is on the free plan
+        if form_owner and form_owner.plan == 'free': # <--- Check actual plan
             today = date.today()
             start_of_month = datetime(today.year, today.month, 1)
 
@@ -330,98 +346,68 @@ def public_form(form_key):
             submission_count = db.session.query(Submission.id).join(Form).filter(
                 Form.user_id == form_owner.id,
                 Submission.submitted_at >= start_of_month
-            ).count() # More efficient count
+            ).count()
 
-            if submission_count >= MAX_SUBMISSIONS_FREE_TIER: # (Indented Level 3)
-                # ---> This block indented (Level 4)
-                # Limit reached - show error and re-render form
-                # NOTE: This prevents the submission from being saved
-                print(f"User {form_owner.id} hit submission limit ({submission_count}/{MAX_SUBMISSIONS_FREE_TIER}) for form {form.id}")
-                # Use a specific error key for the template if needed
-                errors = {'_limit_error': f"This form cannot accept submissions right now (monthly limit reached)."}
-                # Re-render form, passing back submitted data and error
-                # Need fields for re-rendering template correctly
-                fields = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
-                return render_template('public_form.html', form=form, fields=fields, errors=errors, submitted_data=request.form)
-        # --- END: Submission Limit Check ---
+            if submission_count >= MAX_SUBMISSIONS_FREE_TIER:
+                limit_reached = True
+                print(f"User {form_owner.id} (Free Tier) hit submission limit ({submission_count}/{MAX_SUBMISSIONS_FREE_TIER}) for form {form.id}")
+                errors['_limit_error'] = f"This form cannot accept submissions right now (monthly limit reached)."
+                flash('Monthly submission limit reached for this form.', 'warning')
+                # Fall through to the error check below to re-render form
+        # --- END: Updated Submission Limit Check ---
 
-        # Fetch the fields associated with this form again for validation (Indented Level 2)
-        fields = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
-        submitted_data = request.form # Get submitted data
-        errors = {} # Dictionary to store validation errors
-
-        # --- Server-Side Validation Loop --- (Indented Level 2)
-        for field in fields: # (Indented Level 3)
-            field_name = f"field_{field.id}"
-            value = submitted_data.get(field_name)
-
-            if field.required: # (Indented Level 4)
-                is_missing = False
-                if field.field_type == 'checkbox': # (Indented Level 5)
-                    # Required checkbox must be present in the form data
-                    if field_name not in submitted_data: # (Indented Level 6)
-                        is_missing = True
-                elif not value: # (Indented Level 5) Check if value is None or empty string for others
-                    is_missing = True
-
-                if is_missing: # (Indented Level 5)
-                    errors[field_name] = "This field is required." # (Indented Level 6)
-            # --- Add other validations later if needed (e.g., email format) ---
-
-        # --- Check if any errors occurred --- (Indented Level 2)
-        if errors:
-             # ---> This block indented (Level 3)
-            flash('Please correct the errors below.', 'warning')
-            # Re-render the form template, passing errors and submitted data back
-            return render_template('public_form.html',
-                                   form=form,
-                                   fields=fields,
-                                   errors=errors, # Pass errors dict
-                                   submitted_data=submitted_data) # Pass submitted data
-
-        # --- If validation passed, proceed to save submission --- (Indented Level 2)
-        submission_data_dict = {}
-        try: # (Indented Level 3)
-             # ---> This block indented (Level 4)
-            for field in fields: # (Indented Level 5)
+        # --- Server-Side Validation Loop (Run if limit not reached) ---
+        if not limit_reached:
+            for field in fields:
                 field_name = f"field_{field.id}"
-                if field.field_type == 'checkbox': # (Indented Level 6)
-                    value = 'true' if field_name in submitted_data else 'false'
-                else:
-                    value = submitted_data.get(field_name)
-                submission_data_dict[field_name] = value # Use field_ID key for robustness
+                value = submitted_data.get(field_name)
+                if field.required:
+                    is_missing = False
+                    if field.field_type == 'checkbox':
+                        if field_name not in submitted_data: is_missing = True
+                    elif not value: is_missing = True
+                    if is_missing:
+                        errors[field_name] = "This field is required."
+
+        # --- Check if any errors occurred (limit OR validation) ---
+        if errors:
+            if not limit_reached: # Only flash validation error if no limit error occurred
+                flash('Please correct the errors below.', 'warning')
+            # Re-render the template with errors and submitted data
+            return render_template('public_form.html', form=form, fields=fields, errors=errors, submitted_data=submitted_data)
+
+        # --- If NO errors (limit or validation), proceed to save ---
+        submission_data_dict = {}
+        try:
+            for field in fields:
+                field_name = f"field_{field.id}"
+                if field.field_type == 'checkbox': value = 'true' if field_name in submitted_data else 'false'
+                else: value = submitted_data.get(field_name)
+                submission_data_dict[field_name] = value
 
             data_json = json.dumps(submission_data_dict)
             new_submission = Submission(form_id=form.id, data=data_json)
             db.session.add(new_submission)
             db.session.commit()
             flash('Thank you! Your submission has been recorded.', 'success')
-            # Redirect after successful submission (prevents re-posting on refresh)
-            return redirect(url_for('public_form', form_key=form_key))
+            return redirect(url_for('public_form', form_key=form_key)) # PRG pattern
 
-        except Exception as e: # (Indented Level 3)
-             # ---> This block indented (Level 4)
+        except Exception as e:
+            # Handle potential database errors during save
             db.session.rollback()
-            flash(f'An error occurred while saving the submission. Error: {e}', 'danger')
-            print(f"Error saving submission for form {form.id}: {e}")
-            # Re-render form even on save error, potentially with data? Or redirect?
-            # Re-rendering might be better here to avoid losing data if possible.
-            return render_template('public_form.html',
-                                   form=form,
-                                   fields=fields,
-                                   errors={"_save_error": "Could not save submission."}, # Generic save error
-                                   submitted_data=submitted_data)
-        # --- End of try/except for saving ---
-    # --- End of 'if request.method == POST' block ---
+            flash(f'An error occurred while saving submission: {e}', 'danger')
+            print(f"Error saving submission form {form.id}: {e}")
+            errors["_save_error"] = "Could not save submission due to a server error."
+            return render_template('public_form.html', form=form, fields=fields, errors=errors, submitted_data=submitted_data)
 
-    # --- Display the form (GET request) --- (Indented Level 1)
-    # Fetch fields for display if it's a GET request
-    fields_for_display = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
+    # --- Display the form (GET request) ---
     return render_template('public_form.html',
                            form=form,
-                           fields=fields_for_display,
-                           errors={}, # Pass empty dict for errors
-                           submitted_data={}) # Pass empty dict for submitted_data
+                           fields=fields, # Use fields fetched at start
+                           errors={}, # Pass empty dict for errors on initial load
+                           submitted_data={}) # Pass empty dict for submitted data on initial load
+
+# --- End of public_form function ---
 
 # --- VIEW SUBMISSIONS Route ---
 @app.route('/form/<int:form_id>/submissions')
