@@ -95,6 +95,14 @@
         // Proceed if button and Price ID exist
         if (upgradeButton && proPriceId) {
             upgradeButton.addEventListener('click', function() {
+                // ---> ADD THIS CHECK <---
+                if (!isLoggedIn) {
+                // If user is NOT logged in, redirect to signup page
+                console.log('User not logged in, redirecting to register.');
+                window.location.href = "{{ url_for('register') }}"; // Redirect to register
+                return; // Stop processing checkout
+                }
+                // ---> END CHECK <---
                 console.log('Upgrade button clicked. Opening Paddle Checkout...');
                 let checkoutOptions = {
                     items: [{ priceId: proPriceId, quantity: 1 }]
