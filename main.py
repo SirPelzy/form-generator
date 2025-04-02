@@ -544,35 +544,37 @@ def pricing():
         user_email=user_email
     )
 
+# main.py -> Replace the entire old paddle_webhook function with this one
 @app.route('/webhooks/paddle', methods=['POST'])
-# No @login_required - this endpoint is called by Paddle, not users
-# We might exempt this specific route from CSRF protection if it causes issues,
-# as verification relies on Paddle's signature, not user sessions.
-# @csrf.exempt # <-- Uncomment this if CSRF protection interferes with webhooks
+# @csrf.exempt # Uncomment this if CSRF protection interferes later
 def paddle_webhook():
-    # --- START: Updated Signature Verification ---
     # 1. Verify Signature (CRITICAL FOR SECURITY)
     webhook_secret = os.environ.get('PADDLE_WEBHOOK_SECRET')
     if not webhook_secret:
         print("ERROR: PADDLE_WEBHOOK_SECRET environment variable not set.")
         abort(500) # Internal Server Error if secret missing
 
-    # Get signature header from Paddle request
     signature_header = request.headers.get('Paddle-Signature')
     if not signature_header:
         print("WARN: Missing Paddle-Signature header from incoming webhook.")
         abort(400) # Bad Request
 
-    try:
+    try: # Main try block for verification
         # Step 2: Extract timestamp and signature hash from header
         timestamp_str = None
         signature_hash = None
         for part in signature_header.split(';'):
-            key, value = part.split('=', 1)
-            if key == 'ts':
-                timestamp_str = value
-            elif key == 'h1':
-                signature_hash = value
+            # Ensure splitting results in two parts before unpacking
+            if '=' in part:
+                key, value = part.split('=', 1)
+                if key == 'ts':
+                    timestamp_str = value
+                elif key == 'h1':
+                    signature_hash = value
+            else:
+                # Handle cases where a part might not have '=' (though unlikely for Paddle)
+                print(f"WARN: Malformed part in Paddle-Signature header: {part}")
+
 
         if not timestamp_str or not signature_hash:
             raise ValueError("Paddle-Signature header missing 'ts' or 'h1'")
@@ -582,7 +584,7 @@ def paddle_webhook():
         # Step 2b (Optional but Recommended): Check timestamp tolerance (e.g., within 5 minutes)
         current_time = int(time.time()) # Get current Unix timestamp
         if abs(current_time - timestamp) > 300: # 300 seconds = 5 minutes
-            print(f"WARN: Paddle webhook timestamp difference too large: {abs(current_time - timestamp)}s. Current: {current_time}, TS: {timestamp}")
+            print(f"WARN: Paddle webhook timestamp difference too large: {abs(current_time - timestamp)}s.")
             abort(400) # Bad Request - Timestamp outside tolerance
 
         # Step 3: Build signed payload (Timestamp + Colon + Raw Body)
@@ -598,7 +600,7 @@ def paddle_webhook():
 
         # Step 5: Compare signatures securely
         if not hmac.compare_digest(expected_signature, signature_hash):
-             print("WARN: Invalid Paddle webhook signature. Header: {signature_header}, Computed: {expected_signature}")
+             print("WARN: Invalid Paddle webhook signature.")
              abort(400) # Bad Request - Signature mismatch
 
         # If we reach here, the signature is valid
@@ -608,42 +610,45 @@ def paddle_webhook():
         # Catch potential errors during parsing or verification
         print(f"ERROR: Webhook signature verification failed: {e}")
         abort(400) # Bad Request on any verification error
-    # --- END: Updated Signature Verification ---
+    # --- END: Signature Verification ---
 
     # If verification passed, continue to process event...
     # Parse JSON only AFTER verifying signature using the raw body
-    event_data = request.json
-    event_type = event_data.get('event_type')
+    try:
+        event_data = request.json
+        if not event_data: # Handle empty JSON body
+             print("ERROR: Empty JSON payload received in webhook.")
+             abort(400)
+        event_type = event_data.get('event_type')
+        event_payload = event_data.get('data', {}) # The actual event details
+
+        print(f"DEBUG: Received Paddle webhook event: {event_type}")
+
+        # --- TODO: Add logic here later to handle specific event_types ---
+        # Example:
+        # if event_type == 'subscription.created' or event_type == 'subscription.activated':
+        #     # Find user via custom_data or customer_id in event_payload
+        #     # Update user plan/status in DB
+        #     # db.session.commit()
+        #     pass
+        # elif event_type == 'subscription.canceled':
+        #     # Find user
+        #     # Update user status in DB
+        #     # db.session.commit()
+        #     pass
+        # --- End TODO ---
 
     except Exception as e:
-        print(f"ERROR: Webhook signature verification failed: {e}")
-        abort(400) # Bad Request on parsing/verification error
+         print(f"ERROR: Failed to parse or process webhook JSON payload: {e}")
+         # Still return 200 to Paddle if signature was okay but processing failed,
+         # otherwise Paddle might retry indefinitely. Log the error for investigation.
+         return jsonify({'status': 'processing_error'}), 200
 
 
-    # 2. Process the Event Payload (If signature is valid)
-    event_data = request.json
-    event_type = event_data.get('event_type')
-    event_payload = event_data.get('data', {}) # The actual event details
-
-    print(f"DEBUG: Received Paddle webhook event: {event_type}")
-    # print(f"DEBUG: Payload: {event_payload}") # Be careful logging sensitive data
-
-    # --- TODO: Add logic here later to handle specific event_types ---
-    # Example:
-    # if event_type == 'subscription.created' or event_type == 'subscription.activated':
-    #     # Find user via custom_data or customer_id in event_payload
-    #     # Update user plan/status in DB
-    #     # db.session.commit()
-    #     pass
-    # elif event_type == 'subscription.canceled':
-    #     # Find user
-    #     # Update user status in DB
-    #     # db.session.commit()
-    #     pass
-    # --- End TODO ---
-
-    # 3. Acknowledge Receipt to Paddle
+    # 3. Acknowledge Receipt to Paddle if processed successfully
     return jsonify({'status': 'received'}), 200
+
+# --- End of paddle_webhook function ---
 
 @app.route('/terms')
 def terms_of_service():
