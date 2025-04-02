@@ -651,92 +651,85 @@ def paddle_webhook():
                   print("ERROR: Webhook payload missing custom_data.user_id and customer_id. Cannot link to user.")
 
         # Proceed only if we found a user
-        if user: # (Level 3 indent)
+        if user:
             print(f"DEBUG: Webhook linked to User ID: {user.id}, Email: {user.email}")
+            needs_commit = False # Flag to track if DB change needed
 
             # --- Subscription Activated/Created ---
-            if event_type in ['subscription.activated', 'subscription.created']: # (Level 4 indent)
+            # Check Paddle docs for the exact event type signifying a new active subscription
+            if event_type in ['subscription.activated', 'subscription.created']:
                 print(f"INFO: Processing {event_type} for user {user.id}")
-                # ... (extract details - level 5) ...
                 subscription_id = event_payload.get('id')
-                status = event_payload.get('status')
+                status = event_payload.get('status') # Should be 'active'
                 management_urls = event_payload.get('management_urls', {})
                 update_url = management_urls.get('update_payment_method')
                 cancel_url = management_urls.get('cancel')
-                # ... (update user object - level 5) ...
-                user.plan = 'pro'
-                user.subscription_status = status
+
+                # Update user record in your database
+                user.plan = 'pro' # Assuming only one paid plan for now
+                if status: user.subscription_status = status
                 if subscription_id: user.paddle_subscription_id = subscription_id
                 if update_url: user.paddle_update_url = update_url
                 if cancel_url: user.paddle_cancel_url = cancel_url
-                try: # (Level 5 indent)
-                    # ---> Indent this block (Level 6)
-                    db.session.commit()
-                    print(f"INFO: User {user.id} updated to Pro plan (Paddle Sub ID: {subscription_id})")
-                except Exception as e: # (Level 5 indent)
-                    # ---> Indent this block (Level 6)
-                    db.session.rollback()
-                    print(f"ERROR: DB Error updating user {user.id} after {event_type}: {e}")
-                    abort(500)
+                needs_commit = True
+                print(f"INFO: User {user.id} plan set to Pro (Paddle Sub ID: {subscription_id})")
 
             # --- Subscription Cancelled ---
-            elif event_type == 'subscription.canceled': # (Level 4 indent)
+            elif event_type == 'subscription.canceled':
                 print(f"INFO: Processing {event_type} for user {user.id}")
-                paddle_sub_id = event_payload.get('id') # (Level 5)
-                if user.paddle_subscription_id == paddle_sub_id: # (Level 5)
-                    # ---> Indent this block (Level 6)
-                    user.subscription_status = 'canceled'
-                    # user.plan = 'free' # Optional: revert immediately
-                    try: # (Level 6)
-                         # ---> Indent this block (Level 7)
-                         db.session.commit()
-                         print(f"INFO: User {user.id} subscription status set to canceled.")
-                    except Exception as e: # (Level 6)
-                         # ---> Indent this block (Level 7)
-                         db.session.rollback()
-                         print(f"ERROR: DB Error updating user {user.id} after {event_type}: {e}")
-                         abort(500)
-                else: # (Level 5)
-                     # ---> Indent this line (Level 6)
+                paddle_sub_id = event_payload.get('id')
+                # Check if the cancellation event is for the user's current subscription
+                if user.paddle_subscription_id == paddle_sub_id:
+                    new_status = event_payload.get('status') # Should be 'canceled'
+                    # Check for scheduled change (Paddle might cancel at period end)
+                    # scheduled_change = event_payload.get('scheduled_change') # TODO: Handle this later if needed
+                    if new_status: user.subscription_status = new_status
+                    # Decide on plan change: revert immediately or wait? Revert status now.
+                    # user.plan = 'free' # Optional: Revert plan immediately
+                    needs_commit = True
+                    print(f"INFO: User {user.id} subscription status updated to {new_status}.")
+                else:
                      print(f"WARN: Received cancellation for sub ID {paddle_sub_id} but user {user.id} has sub ID {user.paddle_subscription_id}")
 
-            # --- Subscription Updated ---
-            elif event_type == 'subscription.updated': # (Level 4 indent)
-                 # ---> Indent this block (Level 5)
-                 print(f"INFO: Processing {event_type} for user {user.id}")
-                 paddle_sub_id = event_payload.get('id')
-                 if user.paddle_subscription_id == paddle_sub_id: # (Level 5)
-                     # ---> Indent this block (Level 6)
-                     new_status = event_payload.get('status')
-                     if new_status: user.subscription_status = new_status
-                     management_urls = event_payload.get('management_urls', {})
-                     update_url = management_urls.get('update_payment_method')
-                     cancel_url = management_urls.get('cancel')
-                     if update_url: user.paddle_update_url = update_url
-                     if cancel_url: user.paddle_cancel_url = cancel_url
-                     try: # (Level 6)
-                          # ---> Indent this block (Level 7)
-                          db.session.commit()
-                          print(f"INFO: User {user.id} subscription status updated to {new_status}.")
-                     except Exception as e: # (Level 6)
-                          # ---> Indent this block (Level 7)
-                          db.session.rollback()
-                          print(f"ERROR: DB Error updating user {user.id} after {event_type}: {e}")
-                          abort(500)
-                 else: # (Level 5)
-                      # ---> Indent this line (Level 6)
-                      print(f"WARN: Received update for sub ID {paddle_sub_id} but user {user.id} has sub ID {user.paddle_subscription_id}")
+            # --- Subscription Updated (e.g., payment method update, pause/resume) ---
+            elif event_type == 'subscription.updated':
+                print(f"INFO: Processing {event_type} for user {user.id}")
+                paddle_sub_id = event_payload.get('id')
+                # Check if the update is for the user's current subscription
+                if user.paddle_subscription_id == paddle_sub_id:
+                    new_status = event_payload.get('status')
+                    if new_status: user.subscription_status = new_status
+                    # Update management URLs as they might change
+                    management_urls = event_payload.get('management_urls', {})
+                    update_url = management_urls.get('update_payment_method')
+                    cancel_url = management_urls.get('cancel')
+                    if update_url: user.paddle_update_url = update_url
+                    if cancel_url: user.paddle_cancel_url = cancel_url
+                    needs_commit = True
+                    print(f"INFO: User {user.id} subscription status updated to {new_status} (via updated event).")
+                else:
+                     print(f"WARN: Received update for sub ID {paddle_sub_id} but user {user.id} has sub ID {user.paddle_subscription_id}")
 
             # --- Other events ---
-            else: # (Level 4 indent)
-                 # ---> Indent this line (Level 5)
-                 print(f"DEBUG: Ignored webhook event type: {event_type}")
-        else: # (Level 3 indent) (Matches 'if user:')
-            # ---> Indent this block (Level 4)
+            else:
+                print(f"DEBUG: Ignored webhook event type: {event_type}")
+
+            # --- Commit DB Changes if needed ---
+            if needs_commit:
+                try:
+                    db.session.commit()
+                    print(f"INFO: Database committed successfully for user {user.id} after event {event_type}")
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"ERROR: DB Error committing changes for user {user.id} after {event_type}: {e}")
+                    abort(500) # Internal error processing update
+
+        else:
+            # Could not find user associated with webhook
             print(f"ERROR: Could not find user for webhook event: {event_type}")
             # Still return 200 OK to Paddle even if user not found, to prevent retries.
-            pass
-        # --- END: Handle Specific Events ---
+            pass # Important to pass here, don't abort
+    # --- End Event Handling Logic ---
 
     # ---> CORRECTED INDENTATION: This except matches the 'try' around event processing <---
     except Exception as e: # (Level 1 indent)
@@ -751,6 +744,18 @@ def paddle_webhook():
     return jsonify({'status': 'received'}), 200 # (Level 1 indent)
 
 # --- End of paddle_webhook function ---
+
+@app.route('/profile')
+@login_required
+def profile():
+    # The current_user object is automatically available via Flask-Login
+    return render_template('profile.html', title='Your Profile', user=current_user)
+
+@app.route('/subscription')
+@login_required
+def subscription_management():
+    # The current_user object contains the plan and Paddle URLs now
+    return render_template('subscription.html', title='Manage Subscription', user=current_user)
 
 @app.route('/terms')
 def terms_of_service():
