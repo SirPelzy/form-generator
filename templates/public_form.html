@@ -96,8 +96,14 @@
 
     </div> {# End form-container #}
     
-    {# --- START: Add Branding for Free Tier --- #}
-{# TODO: Add conditional logic later based on user plan #}
+    {# --- START: Conditional Branding --- #}
+{# Check if the form has an author and if their plan is 'free' #}
+{% if form.author and form.author.plan == 'free' %}
+    <div class="text-center text-muted mt-4 mb-3 small">
+        Powered by <a href="{{ url_for('home') }}" class="text-muted text-decoration-none">FormGen</a> {# Replace FormGen #}
+    </div>
+{% endif %}
+    
 <div class="text-center text-muted mt-4 mb-3 small">
     Powered by <a href="{{ url_for('home') }}" class="text-muted text-decoration-none">FormGen</a> {# Replace FormGen #}
 </div>
