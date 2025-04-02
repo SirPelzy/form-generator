@@ -15,6 +15,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 </head>
 <body>
 
@@ -145,8 +148,33 @@ function copyDirectLink(inputId, buttonElement) { /* ... */ }
           }, 5000); // Adjust time here (in milliseconds) - e.g., 3000 for 3 seconds
         });
       });
+
+    {# This script block needs the client_token variable passed from the route rendering the page #}
+    {% if client_token %}
+    <script type="text/javascript">
+      try {
+        // Set environment based on token prefix (test_... or live_...)
+        // Or determine based on FLASK_ENV passed from backend if preferred
+        if ("{{ client_token }}".startsWith("test_")) {
+          Paddle.Environment.set("sandbox");
+          console.log("Paddle Environment set to SANDBOX.");
+        } else {
+           Paddle.Environment.set("production");
+           console.log("Paddle Environment set to PRODUCTION.");
+        }
+        // Initialize Paddle
+        Paddle.Initialize({
+          token: "{{ client_token }}" // Use the token passed from backend
+        });
+        console.log("Paddle Initialized.");
+      } catch (error) {
+          console.error("Paddle Initialization failed:", error);
+          // Optionally display an error to the user
+      }
     </script>
-    {# --- END: Auto-dismissing alert script --- #}
+    {% endif %}
+    {# Add other page-specific scripts after this if needed #}
+    {% block scripts %}{% endblock %}
     
 </body>
 </html>
