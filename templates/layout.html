@@ -33,21 +33,42 @@
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item"><a class="nav-link" href="/#features">Features</a></li>
-            <li class="nav-item"><a class="nav-link" href="/#use-cases">Use Cases</a></li>
-            <li class="nav-item"><a class="nav-link" href="#">Templates</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('pricing') }}">Pricing</a></li>
-          </ul>
+          {# --- START: Conditionally Show Main Nav Links --- #}
+          {# Only show Features, Use Cases, etc. if user is NOT logged in #}
+          {% if not current_user.is_authenticated %}
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item"><a class="nav-link" href="/#features">Features</a></li>
+              <li class="nav-item"><a class="nav-link" href="/#use-cases">Use Cases</a></li>
+              <li class="nav-item"><a class="nav-link" href="#">Templates</a></li>
+              <li class="nav-item"><a class="nav-link" href="{{ url_for('pricing') }}">Pricing</a></li>
+            </ul>
+          {% endif %}
+          {# --- END: Conditionally Show Main Nav Links --- #}
+
+          {# --- Auth Links / User Dropdown (Always Present, Content Changes) --- #}
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
             {% if current_user.is_authenticated %}
-              <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
-              <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
+              {# Logged-in user dropdown #}
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarUserDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-person-circle me-1"></i>
+                  {{ current_user.username }}
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarUserDropdown">
+                  <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('subscription_management') }}">Subscription</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                </ul>
+              </li>
             {% else %}
+              {# Logged-out Login/Sign up #}
               <li class="nav-item me-2"><a class="nav-link login-link" href="{{ url_for('login') }}">Log in</a></li>
               <li class="nav-item"><a class="btn btn-sm btn-signup" href="{{ url_for('register') }}">Sign up</a></li>
             {% endif %}
           </ul>
+          {# --- End Auth Links / User Dropdown --- #}
         </div>
       </div>
     </nav>
