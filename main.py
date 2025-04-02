@@ -518,148 +518,27 @@ def edit_field(field_id):
                            field=field_to_edit, # Pass the field object to pre-fill form
                            allowed_field_types=ALLOWED_FIELD_TYPES) # For the type dropdown
 
-# main.py -> Replace the entire subscribe_pro function
-
-@app.route('/subscribe/pro')
-@login_required
-def subscribe_pro():
-    # ---> ADD THIS LINE <---
-    print(f"DEBUG: Checking subscription status for user: ID={current_user.id}, Email={current_user.email}, Plan='{current_user.plan}', Status='{current_user.subscription_status}'")
-    # 1. Check if user is already on the pro plan
-    if current_user.plan == 'pro' and current_user.subscription_status == 'active':
-        flash("You are already subscribed to the Pro plan.", "info")
-        return redirect(url_for('dashboard'))
-
-    # 2. Check if Paddle configuration is available
-    if not PADDLE_API_KEY or not PADDLE_PRO_PRICE_ID:
-        flash("Payment gateway configuration error. Cannot proceed.", "danger")
-        print("ERROR: Missing PADDLE_API_KEY or PADDLE_PRO_PRICE_ID env vars")
-        return redirect(url_for('pricing'))
-
-    # 3. Determine Paddle API Base URL (Sandbox vs Production)
-    is_production = os.environ.get('FLASK_ENV') == 'production'
-    api_base_url = "https://api.paddle.com" if is_production else "https://sandbox-api.paddle.com"
-    print(f"DEBUG: Using Paddle API Base URL: {api_base_url}")
-
-    # 4. Define Headers for API Calls
-    headers = {
-        'Authorization': f'Bearer {PADDLE_API_KEY}',
-        'Content-Type': 'application/json',
-    }
-
-    # 5. Find or Create Paddle Customer ID
-    paddle_customer_id = current_user.paddle_customer_code
-    if not paddle_customer_id:
-        # --- Create Paddle Customer via API ---
-        customer_api_url = f"{api_base_url}/customers" # Standard REST pattern, VERIFY this URL if possible
-        customer_payload = {
-            'email': current_user.email,
-            'name': current_user.username, # Send name if available
-        }
-        try:
-            print(f"DEBUG: Creating Paddle customer for {current_user.email} at {customer_api_url}")
-            response = requests.post(customer_api_url, headers=headers, json=customer_payload, timeout=10)
-            response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
-
-            response_data = response.json()
-            if response_data and 'data' in response_data and 'id' in response_data['data']:
-                paddle_customer_id = response_data['data']['id']
-                print(f"DEBUG: Created Paddle customer ID: {paddle_customer_id}")
-                # Save to our database
-                current_user.paddle_customer_code = paddle_customer_id
-                db.session.commit()
-                print(f"DEBUG: Saved paddle_customer_code for user {current_user.id}")
-            else:
-                raise Exception(f"Paddle create customer response missing data.id. Response: {response_data}")
-
-        except requests.exceptions.RequestException as e:
-            db.session.rollback() # Rollback potential commit failure if error happened after assigning ID
-            print(f"ERROR: Network error creating Paddle customer: {e}")
-            flash("Network error communicating with payment provider.", "danger")
-            return redirect(url_for('pricing'))
-        except Exception as e:
-            db.session.rollback()
-            print(f"ERROR: Failed to create/process Paddle customer for user {current_user.id}: {e}")
-            # Try to get Paddle error detail if available
-            error_detail = "Unknown error during customer setup" # Default
-            if 'response_data' in locals() and isinstance(response_data, dict):
-                 error_detail = response_data.get('error', {}).get('detail', str(e))
-            elif hasattr(e, 'response') and e.response is not None: # Handle potential HTTPError here too
-                 try: error_detail = e.response.json().get('error', {}).get('detail', e.response.text)
-                 except: error_detail = e.response.text # Fallback if response isn't JSON
-            else: error_detail = str(e)
-
-            flash(f"Could not set up billing customer: {error_detail}", "danger")
-            return redirect(url_for('pricing'))
-        # --- End Customer Create ---
-
-    # 6. Create Paddle Transaction Checkout Link via API
-    transaction_api_url = f"{api_base_url}/transactions" # Use URL provided by user
-    transaction_payload = {
-        "items": [{"price_id": PADDLE_PRO_PRICE_ID, "quantity": 1}],
-        "customer_id": paddle_customer_id, # Use the ID string
-        "collection_mode": "automatic", # Essential for subscriptions
-        "custom_data": {'user_id': str(current_user.id)} # Link back to our user
-    }
-    try:
-        print(f"DEBUG: Creating Paddle transaction at {transaction_api_url} with payload: {transaction_payload}")
-        response = requests.post(transaction_api_url, headers=headers, json=transaction_payload, timeout=15)
-        response.raise_for_status() # Check for HTTP errors (4xx/5xx)
-
-        response_data = response.json()
-        checkout_url = response_data.get('data', {}).get('checkout', {}).get('url')
-
-        if checkout_url:
-            print(f"DEBUG: Paddle Checkout URL generated: {checkout_url}")
-            # 7. Redirect user to Paddle Checkout
-            return redirect(checkout_url)
-        else:
-            print(f"DEBUG: Paddle response missing checkout URL. Status: {response.status_code}, Response: {response_data}")
-            raise Exception("Checkout URL not found in Paddle transaction response.")
-
-    # --- START: Corrected Except Block Indentation ---
-    except requests.exceptions.HTTPError as e: # Catch HTTP errors (like 400) specifically
-        status_code = e.response.status_code
-        error_detail = f"HTTP {status_code} error"
-        try:
-            # Try to get Paddle's specific structured error
-            paddle_error = e.response.json().get('error', {})
-            error_type = paddle_error.get('type', 'unknown_type')
-            error_code = paddle_error.get('code', 'unknown_code')
-            error_info = paddle_error.get('detail', e.response.text) # Get detail or full text
-            error_detail = f"{error_info} (Type: {error_type}, Code: {error_code})"
-            print(f"ERROR: Paddle API HTTP Error ({status_code}): {error_detail}")
-            # Also print potential field errors if Paddle provides them
-            if 'errors' in paddle_error:
-                 print(f"DEBUG: Paddle Field Errors: {paddle_error['errors']}")
-        except json.JSONDecodeError:
-            # If response wasn't JSON
-            error_detail = e.response.text
-            print(f"ERROR: Paddle API HTTP Error ({status_code}): Non-JSON response: {error_detail}")
-        except Exception as json_e:
-             print(f"ERROR: Failed to parse Paddle error response: {json_e}")
-             error_detail = f"HTTP {status_code} Bad Request (failed to parse details)"
-
-        flash(f"Could not initiate subscription checkout: {error_detail}. Please check details or contact support.", "danger")
-        return redirect(url_for('pricing'))
-
-    except requests.exceptions.RequestException as e: # <-- CORRECTED INDENTATION (matches 'try' and previous 'except')
-        print(f"ERROR: Network error creating Paddle transaction: {e}")
-        flash("Network error communicating with payment provider. Please try again later.", "danger")
-        return redirect(url_for('pricing'))
-
-    except Exception as e: # <-- CORRECTED INDENTATION (matches 'try' and previous 'except')
-        print(f"ERROR: Unexpected error during Paddle transaction creation: {e}")
-        flash("An unexpected error occurred initiating checkout. Please try again later.", "danger")
-        return redirect(url_for('pricing'))
-    # --- END: Corrected Except Block Indentation ---
-
-# --- End of subscribe_pro function ---
-
 @app.route('/pricing')
 def pricing():
-    # Can add logic later to pass plan details if needed
-    return render_template('pricing.html', title='Pricing')
+    # Get necessary Paddle config from environment variables
+    client_token = os.environ.get('PADDLE_CLIENT_SIDE_TOKEN')
+    pro_price_id = os.environ.get('PADDLE_PRO_PRICE_ID')
+
+    # Get user email only if authenticated (for pre-filling checkout)
+    user_email = current_user.email if current_user.is_authenticated else None
+
+    if not client_token or not pro_price_id:
+        print("ERROR: PADDLE_CLIENT_SIDE_TOKEN or PADDLE_PRO_PRICE_ID missing from env vars!")
+        # Handle missing config - maybe disable upgrade button in template?
+        # For now, template JS will handle button state if IDs missing
+
+    return render_template(
+        'pricing.html',
+        title='Pricing',
+        client_token=client_token,
+        pro_price_id=pro_price_id,
+        user_email=user_email
+    )
 
 @app.route('/terms')
 def terms_of_service():
