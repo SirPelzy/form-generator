@@ -411,6 +411,17 @@ def public_form(form_key):
             errors["_save_error"] = "Could not save submission due to a server error."
             return render_template('public_form.html', form=form, fields=fields, errors=errors, submitted_data=submitted_data)
 
+    if 'fields' not in locals(): # Ensure fields is defined if POST wasn't hit
+         fields_for_display = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
+    else:
+         fields_for_display = fields # Use fields from POST logic if defined
+    # ---> ADD THIS DEBUG PRINT <---
+    if form.author:
+        print(f"DEBUG: Rendering public form {form.id}. Author ID: {form.author.id}, Author Plan: '{form.author.plan}', Author Status: '{form.author.subscription_status}'")
+    else:
+        # This would indicate a problem loading the relationship
+        print(f"DEBUG: Rendering public form {form.id}. Author relationship not loaded or null.")
+    # ---> END DEBUG PRINT <---
     # --- Display the form (GET request) ---
     return render_template('public_form.html',
                            form=form,
