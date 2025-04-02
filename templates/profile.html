@@ -1,0 +1,44 @@
+{# templates/profile.html #}
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="content-section">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <h2 class="mb-4">Your Profile</h2>
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        {# Placeholder profile image #}
+                        <img src="https://via.placeholder.com/150/254441/FFFFFF?text={{ user.username[0]|upper }}" class="rounded-circle mb-3" alt="Profile Picture Placeholder" width="120" height="120">
+                         {# Using first letter of username for placeholder #}
+                    </div>
+                    <dl class="row">
+                      <dt class="col-sm-4">Username</dt>
+                      <dd class="col-sm-8">{{ user.username }}</dd>
+
+                      <dt class="col-sm-4">Email</dt>
+                      <dd class="col-sm-8">{{ user.email }}</dd>
+
+                      <dt class="col-sm-4">Subscription Plan</dt>
+                      <dd class="col-sm-8">
+                        <span class="badge {% if user.plan == 'pro' %}bg-primary{% else %}bg-secondary{% endif %}">
+                            {{ user.plan | capitalize }}
+                        </span>
+                      </dd>
+
+                      <dt class="col-sm-4">Subscription Status</dt>
+                      <dd class="col-sm-8">
+                        {# Display status nicely, default to Inactive #}
+                        {{ user.subscription_status | capitalize if user.subscription_status else 'Inactive' }}
+                      </dd>
+                    </dl>
+                    <p class="text-muted small mt-4">Profile editing is not yet available.</p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-secondary mt-2">&laquo; Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
