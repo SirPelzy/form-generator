@@ -803,6 +803,11 @@ def subscription_management():
 def terms_of_service():
     return render_template('terms.html', title='Terms of Service')
 
+@app.route('/privacy')
+def privacy_policy():
+    # Renders the privacy.html template
+    return render_template('privacy.html', title='Privacy Policy')
+
 if __name__ == '__main__':
     # Ensure database tables are created before running the app for the first time
     # with app.app_context():
