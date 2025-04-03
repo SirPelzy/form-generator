@@ -1,0 +1,116 @@
+{# templates/privacy.html #}
+{% extends "layout.html" %} {# Assumes you want the standard navbar etc. #}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="content-section py-5"> {# Added padding #}
+    <div class="container"> {# Constrain width #}
+        <h1 class="mb-4 display-5 fw-bold">Privacy Policy for FormGen</h1>
+        <p class="text-muted mb-4">Last Updated: April 1, 2025</p>
+
+        <h2 class="mt-4 h4 fw-bold">1. Introduction</h2>
+        <p>Welcome to FormGen ("Service"), provided by The CV Place ("Provider", "we", "us", "our"), located in Lagos, Nigeria. We are committed to protecting the privacy of our users and the data processed through our Service.</p>
+        <p>This Privacy Policy explains how we collect, use, disclose, store, and protect information when you use our website (form-generator.up.railway.app), applications, and services. It also describes your data protection rights under applicable law, including the Nigeria Data Protection Regulation (NDPR).</p>
+        <p>By using the Service, you agree to the collection and use of information in accordance with this policy. Please also review our <a href="{{ url_for('terms_of_service') }}">Terms of Service</a>.</p> {# Link to your Terms page #}
+
+        <h2 class="mt-4 h4 fw-bold">2. Information We Collect</h2>
+        <p>We collect different types of information for various purposes to provide and improve our Service to you.</p>
+        <p><strong>a) Information You Provide (Our Users):</strong></p>
+        <ul class="list-unstyled ps-4">
+            <li><strong>Account Information:</strong> When you register for an account, we collect information such as your username, email address, and password (stored securely hashed).</li>
+            <li><strong>Plan &amp; Billing Information:</strong> If you subscribe to a paid plan, our payment processor, Paddle, will collect payment information (like credit card details) necessary to process payments. We do not directly store your full credit card number but may store subscription details like your plan type, status, subscription ID, and billing-related contact information provided via Paddle.</li>
+            <li><strong>Form Content:</strong> We store the forms, questions, and configuration settings you create using the Service ("Content").</li>
+            <li><strong>Communications:</strong> If you contact us directly (e.g., for support), we may receive additional information like your name, email address, the contents of the message, and any attachments.</li>
+        </ul>
+        <p><strong>b) Information Collected Automatically (Users &amp; Visitors):</strong></p>
+        <ul class="list-unstyled ps-4">
+            <li><strong>Usage Data:</strong> We automatically collect information when you access the Service, such as your IP address, browser type, operating system, device information, pages visited, time spent on pages, referral URLs, and other standard web log information.</li>
+            <li><strong>Cookies and Tracking Technologies:</strong> We use cookies and similar tracking technologies (like session cookies for login, CSRF protection) to operate and improve the Service.</li>
+        </ul>
+        <p><strong>c) Information Processed on Behalf of Our Users (Submissions):</strong></p>
+        <ul class="list-unstyled ps-4">
+            <li><strong>Submissions Data:</strong> When end-users ("Respondents") submit responses through forms created by you (our "User"), we collect and store that submission data ("Submissions") on your behalf.</li>
+            <li><strong>Important Distinction:</strong> For Submissions Data, you (the User/form creator) are the Data Controller, determining the purpose and means of processing. We (the Provider/FormGen) act as the Data Processor, processing this data solely based on your instructions (i.e., to collect, store, and display the Submissions to you). You are responsible for ensuring you have the legal right to collect this data from Respondents and comply with applicable privacy laws regarding the Submissions.</li>
+            <li>We may also collect technical data about the submission (like IP address, browser type of the Respondent) for security, anti-spam purposes, and to provide analytics to you (the User).</li>
+        </ul>
+
+        <h2 class="mt-4 h4 fw-bold">3. How We Use Information</h2>
+        <p>We use the collected information for various purposes:</p>
+        <ul class="ps-4">
+            <li>To provide, operate, maintain, and improve our Service.</li>
+            <li>To set up and manage your user account and subscription.</li>
+            <li>To process payments for paid plans (facilitated by Paddle).</li>
+            <li>To communicate with you, including responding to inquiries, sending service updates, security alerts, and support messages.</li>
+            <li>To send marketing communications (if you opt-in, with an option to opt-out).</li>
+            <li>To monitor and analyze usage trends and activities to improve user experience and service offerings.</li>
+            <li>To ensure security, prevent fraud, and enforce our Terms of Service.</li>
+            <li>To comply with legal obligations.</li>
+            <li>Specifically for Submissions Data: To store it securely and make it available to you (the User/form creator) through your dashboard.</li>
+        </ul>
+
+        <h2 class="mt-4 h4 fw-bold">4. Legal Basis for Processing (NDPR/GDPR)</h2>
+        <p>Our legal basis for collecting and using Personal Data described above depends on the data and context:</p>
+        <ul class="ps-4">
+            <li><strong>Performance of a Contract:</strong> Processing your Account Information and associated data is necessary to provide the Service you requested under our Terms of Service.</li>
+            <li><strong>Legitimate Interests:</strong> Processing Usage Data for security, analytics, and service improvement is based on our legitimate interests, provided they don't override your rights.</li>
+            <li><strong>Consent:</strong> Where required (e.g., for non-essential cookies or marketing emails), we will obtain your consent.</li>
+            <li><strong>Legal Obligation:</strong> We may process data to comply with legal requirements.</li>
+            <li><strong>Processing Submissions:</strong> Our legal basis for processing Submissions data is primarily to fulfill our contractual obligation to you (the User/form creator) to provide the form service, acting as a Data Processor under your instruction.</li>
+        </ul>
+
+        <h2 class="mt-4 h4 fw-bold">5. Data Sharing and Disclosure</h2>
+        <p>We do not sell your Personal Data. We may share information under the following limited circumstances:</p>
+        <ul class="ps-4">
+            <li><strong>Service Providers:</strong> With third-party vendors and service providers who perform services on our behalf, such as payment processing (Paddle), website/database hosting (Railway), email delivery, analytics. These providers only have access to information necessary to perform their tasks and are obligated not to disclose or use it for other purposes.</li>
+            <li><strong>Legal Requirements:</strong> If required by law, subpoena, or other legal process, or if we believe in good faith that disclosure is necessary to protect our rights, protect your safety or the safety of others, investigate fraud, or respond to a government request.</li>
+            <li><strong>Business Transfers:</strong> If we are involved in a merger, acquisition, or asset sale, your information may be transferred as part of that transaction, subject to notice and privacy commitments.</li>
+            <li><strong>With Your Consent:</strong> We may share information with third parties when we have your explicit consent to do so.</li>
+            <li><strong>Submissions Data:</strong> We share Submissions Data only with the User (form creator) who owns the form through which the data was collected.</li>
+        </ul>
+
+        <h2 class="mt-4 h4 fw-bold">6. Data Storage and Security</h2>
+        <p>We use third-party hosting providers (currently Railway) to store your data. Servers may be located outside of Nigeria.</p>
+        <p>We implement reasonable technical and organizational security measures to protect your information against unauthorized access, alteration, disclosure, or destruction. These include HTTPS encryption, password hashing, and secure infrastructure provided by our partners.</p>
+        <p>However, no internet transmission or electronic storage is 100% secure. We cannot guarantee absolute security.</p>
+
+        <h2 class="mt-4 h4 fw-bold">7. Data Retention</h2>
+        <p><strong>Account Data:</strong> We retain your account information for as long as your account is active or as needed to provide you the Service and comply with legal obligations.</p>
+        <p><strong>Submissions Data:</strong> We retain Submissions Data on behalf of our Users according to their instructions or our default policy. Users are responsible for managing and deleting their Submissions.</p>
+
+        <h2 class="mt-4 h4 fw-bold">8. Your Data Protection Rights (NDPR &amp; others)</h2>
+        <p>Depending on your location and applicable law (including NDPR), you may have the following rights regarding your Personal Data that we control (primarily your Account Information):</p>
+        <ul class="ps-4">
+            <li><strong>Right to Access:</strong> Request access to the personal data we hold about you.</li>
+            <li><strong>Right to Rectification:</strong> Request correction of inaccurate or incomplete data.</li>
+            <li><strong>Right to Erasure:</strong> Request deletion of your personal data, under certain conditions.</li>
+            <li><strong>Right to Restrict Processing:</strong> Request restriction of processing, under certain conditions.</li>
+            <li><strong>Right to Object to Processing:</strong> Object to our processing based on legitimate interests.</li>
+            <li><strong>Right to Data Portability:</strong> Request transfer of your data to another organization, or directly to you, under certain conditions.</li>
+            <li><strong>Right to Withdraw Consent:</strong> If processing is based on consent, you can withdraw it at any time.</li>
+        </ul>
+        <p>To exercise these rights regarding your FormGen account data, please contact us using the details below.</p>
+        <p><strong>Important Note for Respondents:</strong> If you submitted data through a form hosted on our Service and wish to exercise your rights regarding that specific submission data, please contact the creator of the form (our User), who is the Data Controller for that data.</p>
+        <p>You also have the right to lodge a complaint with your local data protection authority. In Nigeria, this is the National Information Technology Development Agency (NITDA).</p>
+
+        <h2 class="mt-4 h4 fw-bold">9. Cookies</h2>
+        <p>We use necessary cookies for website functionality, such as session management and CSRF protection.</p>
+        {# TODO: Add link to a dedicated Cookie Policy if you implement analytics/marketing cookies #}
+
+        <h2 class="mt-4 h4 fw-bold">10. Children's Privacy</h2>
+        <p>Our Service is not directed to individuals under the age of 18. We do not knowingly collect Personal Data from children under this age. If we become aware that we have collected such data, we will take steps to delete it.</p>
+
+        <h2 class="mt-4 h4 fw-bold">11. International Data Transfers</h2>
+        <p>Your information, including Personal Data, may be transferred to — and maintained on — computers located outside of your state, province, country, or other governmental jurisdiction where the data protection laws may differ (e.g., servers hosted by Railway). We ensure appropriate safeguards are in place for such transfers as required by applicable law.</p>
+
+        <h2 class="mt-4 h4 fw-bold">12. Changes to This Privacy Policy</h2>
+        <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last Updated" date. We may also notify you via email or through the Service. You are advised to review this Privacy Policy periodically for any changes.</p>
+
+        <h2 class="mt-4 h4 fw-bold">13. Contact Us</h2>
+        <p>If you have any questions about this Privacy Policy or our data practices, please contact us:</p>
+        <ul class="list-unstyled ps-4">
+            <li>By email: contactthecvplace@gmail.com</li>
+        </ul>
+
+    </div> {# End container #}
+</div> {# End content-section #}
+{% endblock %}
