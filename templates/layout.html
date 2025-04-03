@@ -96,19 +96,60 @@
     </div> {# Close container #}
 </main>
 
-{# Conditionally Display Footer #}
+{# --- START: Conditionally Display Footer --- #}
 {% if not current_user.is_authenticated %}
 <footer class="py-5 mt-5 bg-light text-muted">
-    {# ... (Keep your full footer structure here) ... #}
-     <div class="container">
-        {# ... footer row/columns ... #}
+    <div class="container">
+        <div class="row g-4">
+            {# Column 1: Brand/About #}
+            <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+                <h5 class="fw-bold text-dark mb-3">FormGen</h5> {# Use text-dark for heading #}
+                <p class="small">The simplest way to create forms you and your audience will love.</p>
+                {# Add social icons later if needed #}
+            </div>
+            {# Column 2: Product Links #}
+            <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+                <h6 class="text-uppercase fw-bold text-dark mb-3">Product</h6>
+                <ul class="list-unstyled small">
+                    <li class="mb-2"><a href="/#features" class="text-muted text-decoration-none">Features</a></li>
+                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Templates</a></li> {# Placeholder Link #}
+                    <li class="mb-2"><a href="{{ url_for('pricing') }}" class="text-muted text-decoration-none">Pricing</a></li>
+                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Integrations</a></li> {# Placeholder Link #}
+                </ul>
+            </div>
+            {# Column 3: Resources #}
+            <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+                 <h6 class="text-uppercase fw-bold text-dark mb-3">Resources</h6>
+                 <ul class="list-unstyled small">
+                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Blog</a></li> {# Placeholder Link #}
+                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Help Center</a></li> {# Placeholder Link #}
+                    <li class="mb-2"><a href="/#use-cases" class="text-muted text-decoration-none">Use Cases</a></li>
+                </ul>
+            </div>
+             {# Column 4: Legal #}
+            <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+                <h6 class="text-uppercase fw-bold text-dark mb-3">Legal</h6>
+                <ul class="list-unstyled small">
+                     {# Link to privacy policy route #}
+                    <li class="mb-2"><a href="{{ url_for('privacy_policy') }}" class="text-muted text-decoration-none">Privacy Policy</a></li>
+                     {# Plain text for Terms of Service per last request #}
+                    <li class="mb-2"><a href="{{ url_for('terms') }}" class="text-muted text-decoration-none">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
         <hr class="my-4">
         <div class="text-center small">
-             &copy; 2025 FormGen. All rights reserved. {# Hardcoded year #}
+             {# Using hardcoded year for simplicity #}
+             &copy; 2025 FormGen. All rights reserved.
         </div>
     </div>
 </footer>
 {% endif %}
+{# --- END: Conditionally Display Footer --- #}
+
+{# --- Scripts should follow this --- #}
+</body>
+</html>
 
 
 {# --- Scripts --- #}
