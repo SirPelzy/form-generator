@@ -303,3 +303,15 @@ footer a.text-muted:hover {
 /* Style for alternating rows if needed, e.g., slightly different background */
 .feature-highlights-section .row:nth-child(odd) { background-color: #fdfdfd; }
 
+/* Optional: Style carousel controls/indicators if desired */
+#featureCarousel .carousel-indicators button {
+    background-color: var(--text-color); /* Make dots darker */
+}
+
+#featureCarousel .carousel-control-prev-icon,
+#featureCarousel .carousel-control-next-icon {
+    background-color: rgba(0, 0, 0, 0.3); /* Darker icon background */
+    border-radius: 50%;
+    padding: 1rem;
+}
+
