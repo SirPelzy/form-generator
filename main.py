@@ -20,6 +20,9 @@ from wtforms.validators import ValidationError
 from flask_wtf.csrf import CSRFProtect
 from datetime import datetime, date
 import requests
+import csv
+import io # Input/Output operations
+from flask import Response # To build the CSV response
 
 # --- Load Paddle Configuration ---
 PADDLE_VENDOR_ID = os.environ.get('PADDLE_VENDOR_ID')
@@ -742,6 +745,67 @@ def paddle_webhook():
 def profile():
     # The current_user object is automatically available via Flask-Login
     return render_template('profile.html', title='Your Profile', user=current_user)
+
+
+@app.route('/form/<int:form_id>/download/csv')
+@login_required
+def download_submissions_csv(form_id):
+    form = Form.query.get_or_404(form_id)
+
+    # --- Authorization Check: Owner AND Pro Plan ---
+    if form.author != current_user:
+        flash("You do not have permission to download submissions for this form.", "danger")
+        return redirect(url_for('dashboard'))
+    if not (current_user.plan == 'pro' and current_user.subscription_status == 'active'):
+        flash("CSV download is a Pro feature. Please upgrade your plan.", "warning")
+        # Redirect back to submissions page or pricing page
+        return redirect(url_for('view_submissions', form_id=form.id))
+    # --- End Authorization Check ---
+
+    # Fetch data needed for CSV
+    fields = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
+    submissions_raw = Submission.query.filter_by(form_id=form.id).order_by(Submission.submitted_at.asc()).all() # Oldest first typically better for export
+
+    # Use StringIO to build CSV in memory
+    si = io.StringIO()
+    cw = csv.writer(si)
+
+    # --- Create CSV Header ---
+    header = ['Submission ID', 'Submitted At'] # Standard columns first
+    field_labels = {f"field_{field.id}": field.label for field in fields} # Map field_id to label for header lookup
+    header.extend([field.label for field in fields])
+    cw.writerow(header)
+
+    # --- Write Data Rows ---
+    for sub in submissions_raw:
+        try:
+            data_dict = json.loads(sub.data) # Parse the stored JSON data
+        except json.JSONDecodeError:
+            data_dict = {"error": "parse_error"} # Handle potential bad data
+
+        row = [
+            sub.id,
+            sub.submitted_at.strftime('%Y-%m-%d %H:%M:%S') # Format timestamp
+        ]
+        # Add data for each field column, in the same order as headers
+        for field in fields:
+            field_key = f"field_{field.id}"
+            row.append(data_dict.get(field_key, '')) # Use .get() for safety if data missing
+        cw.writerow(row)
+
+    # --- Create Flask Response ---
+    output = si.getvalue()
+    # Create filename, ensuring it's safe
+    safe_title = "".join(c if c.isalnum() else "_" for c in form.title) # Basic sanitization
+    filename = f"form_{form.id}_{safe_title}_submissions.csv"
+
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment;filename={filename}"}
+    )
+
+# --- End download_submissions_csv function ---
 
 # main.py -> Replace the existing subscription_management route
 
