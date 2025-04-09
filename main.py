@@ -620,73 +620,42 @@ def pricing():
 # main.py -> Replace the entire old paddle_webhook function with this one
 
 @app.route('/webhooks/paddle', methods=['POST'])
-@csrf.exempt # Exclude webhook route from session-based CSRF check
+@csrf.exempt # Keep webhook exempt from CSRF
 def paddle_webhook():
-    # 1. Verify Signature (CRITICAL FOR SECURITY)
+    # 1. Verify Signature (Keep existing, verified logic)
     webhook_secret = os.environ.get('PADDLE_WEBHOOK_SECRET')
     if not webhook_secret:
         print("ERROR: PADDLE_WEBHOOK_SECRET environment variable not set.")
-        abort(500) # Internal Server Error if secret missing
-
+        abort(500)
     signature_header = request.headers.get('Paddle-Signature')
     if not signature_header:
         print("WARN: Missing Paddle-Signature header from incoming webhook.")
-        abort(400) # Bad Request
-
-    try: # Main try block for signature verification logic
-        # Step 2: Extract timestamp and signature hash from header
-        timestamp_str = None
-        signature_hash = None
-        for part in signature_header.split(';'):
-            if '=' in part: # Ensure proper format before splitting
-                key, value = part.split('=', 1)
-                if key == 'ts':
-                    timestamp_str = value
-                elif key == 'h1':
-                    signature_hash = value
-            else:
-                print(f"WARN: Malformed part in Paddle-Signature header: {part}")
-
-        if not timestamp_str or not signature_hash:
-            raise ValueError("Paddle-Signature header missing 'ts' or 'h1'")
-
+        abort(400)
+    try:
+        sig_parts = {p.split('=')[0]: p.split('=')[1] for p in signature_header.split(';')}
+        timestamp_str = sig_parts.get('ts'); signature_hash = sig_parts.get('h1')
+        if not timestamp_str or not signature_hash: raise ValueError("Missing ts or h1")
         timestamp = int(timestamp_str)
-
-        # Step 2b: Check timestamp tolerance
         current_time = int(time.time())
-        if abs(current_time - timestamp) > 300: # 5 minutes tolerance
+        if abs(current_time - timestamp) > 300: # 5 min tolerance
             print(f"WARN: Paddle webhook timestamp difference too large: {abs(current_time - timestamp)}s.")
-            abort(400) # Bad Request - Timestamp outside tolerance
-
-        # Step 3: Build signed payload
+            abort(400)
         request_body_bytes = request.get_data()
-        signed_payload = f"{timestamp}:{request_body_bytes.decode('utf-8')}" # Use COLON
-
-        # Step 4: Hash signed payload
-        expected_signature = hmac.new(
-            webhook_secret.encode('utf-8'),
-            signed_payload.encode('utf-8'),
-            hashlib.sha256
-        ).hexdigest()
-
-        # Step 5: Compare signatures securely
+        signed_payload = f"{timestamp}:{request_body_bytes.decode('utf-8')}"
+        expected_signature = hmac.new(webhook_secret.encode('utf-8'), signed_payload.encode('utf-8'), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected_signature, signature_hash):
              print("WARN: Invalid Paddle webhook signature.")
-             abort(400) # Bad Request - Signature mismatch
-
+             abort(400)
         print("DEBUG: Paddle webhook signature verified successfully.")
-
     except Exception as e:
-        # Catch errors during signature verification
         print(f"ERROR: Webhook signature verification failed: {e}")
-        abort(400) # Bad Request on verification error
+        abort(400)
     # --- END: Signature Verification ---
 
-    # If signature verification passed, process the event
-    try: # Start try block for event processing (Level 1 indent)
-        # Parse JSON only AFTER verifying signature using the raw body
+    # 2. Process the Event Payload
+    try:
         event_data = request.json
-        if not event_data: # Handle empty JSON body
+        if not event_data:
              print("ERROR: Empty JSON payload received in webhook.")
              abort(400)
 
@@ -694,109 +663,138 @@ def paddle_webhook():
         event_payload = event_data.get('data', {})
         print(f"DEBUG: Received Paddle webhook event: {event_type}")
 
-        # --- START: Handle Specific Events --- (Level 2 indent)
-        user_id = event_payload.get('custom_data', {}).get('user_id')
+        # --- Find Corresponding User ---
+        user_id_from_custom = event_payload.get('custom_data', {}).get('user_id')
         user = None
-
-        if user_id: # (Level 3 indent)
-            try: # (Level 4 indent)
-                user = User.query.get(int(user_id))
-                if not user: # (Level 5 indent)
-                     print(f"ERROR: Webhook received for non-existent user ID: {user_id}")
-            except ValueError: # (Level 4 indent)
-                 print(f"ERROR: Invalid user_id format in custom_data: {user_id}")
-        else: # (Level 3 indent)
-             # Fallback: Try finding user via Paddle Customer ID
+        if user_id_from_custom:
+            try:
+                user = User.query.get(int(user_id_from_custom))
+                if not user: print(f"ERROR: User ID {user_id_from_custom} from custom_data not found.")
+            except ValueError: print(f"ERROR: Invalid user_id format in custom_data: {user_id_from_custom}")
+        # Fallback using customer_id only if custom_data lookup failed
+        if not user:
              paddle_customer_id = event_payload.get('customer_id')
-             if paddle_customer_id: # (Level 4 indent)
-                  user = User.query.filter_by(paddle_customer_code=paddle_customer_id).first()
-                  if not user: # (Level 5 indent)
-                       print(f"ERROR: Webhook received for unknown Paddle Customer ID: {paddle_customer_id}")
-             else: # (Level 4 indent)
-                  print("ERROR: Webhook payload missing custom_data.user_id and customer_id. Cannot link to user.")
+             if paddle_customer_id:
+                 user = User.query.filter_by(paddle_customer_code=paddle_customer_id).first()
+                 if not user: print(f"ERROR: Paddle Customer ID {paddle_customer_id} not found.")
+             else:
+                  print("ERROR: Webhook missing user_id in custom_data and customer_id. Cannot link.")
 
-        # Proceed only if we found a user
+        # --- Handle Events ONLY if User Found ---
         if user:
             print(f"DEBUG: Webhook linked to User ID: {user.id}, Email: {user.email}")
-            needs_commit = False # Flag to track if DB change needed
+            needs_commit = False
+            paddle_sub_id = event_payload.get('id') # Common field for subscription events
+            new_status = event_payload.get('status') # Common field for subscription events
 
-            # --- Subscription Activated/Created ---
-            # Check Paddle docs for the exact event type signifying a new active subscription
-            if event_type in ['subscription.activated', 'subscription.created']:
-                print(f"INFO: Processing {event_type} for user {user.id}")
-                subscription_id = event_payload.get('id')
-                status = event_payload.get('status') # Should be 'active'
+            # --- Subscription Activation Events ---
+            # Using transaction.completed OR subscription.activated
+            if event_type == 'transaction.completed' and event_payload.get('origin') == 'subscription_charge':
+                 # Check if this transaction activates *our* target subscription for this user
+                 # Paddle Billing often includes subscription details or links transaction to it
+                 linked_subscription_id = event_payload.get('subscription_id')
+                 # Only activate if status isn't already active/pro
+                 if linked_subscription_id and (user.plan != 'pro' or user.subscription_status != 'active'):
+                     print(f"INFO: Processing {event_type} potentially activating subscription {linked_subscription_id} for user {user.id}")
+                     # Fetch management URLs here via API if needed, or wait for updated event
+                     user.plan = 'pro'
+                     user.subscription_status = 'active' # Assume active on completion
+                     user.paddle_subscription_id = linked_subscription_id # Store the actual subscription ID
+                     needs_commit = True
+                     print(f"INFO: User {user.id} set to Pro based on transaction completion.")
 
-                # Update user record in your database
-                user.plan = 'pro' # Assuming only one paid plan for now
-                if status: user.subscription_status = status
-                if subscription_id: user.paddle_subscription_id = subscription_id
-                needs_commit = True
-                print(f"INFO: User {user.id} plan set to Pro (Paddle Sub ID: {subscription_id})")
+            elif event_type == 'subscription.activated':
+                 if user.paddle_subscription_id == paddle_sub_id and user.subscription_status != 'active':
+                     print(f"INFO: Processing {event_type} for user {user.id}, sub {paddle_sub_id}")
+                     user.plan = 'pro' # Ensure plan is set
+                     if new_status: user.subscription_status = new_status # Should be 'active'
+                     # Try to get management URLs (might be in this payload sometimes)
+                     management_urls = event_payload.get('management_urls', {})
+                     update_url = management_urls.get('update_payment_method')
+                     cancel_url = management_urls.get('cancel')
+                     if update_url: user.paddle_update_url = update_url
+                     if cancel_url: user.paddle_cancel_url = cancel_url
+                     needs_commit = True
+                     print(f"INFO: User {user.id} subscription status updated to {new_status} via {event_type}.")
 
-            # --- Subscription Cancelled ---
-            elif event_type == 'subscription.canceled':
-                print(f"INFO: Processing {event_type} for user {user.id}")
-                paddle_sub_id = event_payload.get('id')
-                # Check if the cancellation event is for the user's current subscription
-                if user.paddle_subscription_id == paddle_sub_id:
-                    new_status = event_payload.get('status') # Should be 'canceled'
-                    # Check for scheduled change (Paddle might cancel at period end)
-                    # scheduled_change = event_payload.get('scheduled_change') # TODO: Handle this later if needed
-                    if new_status: user.subscription_status = new_status
-                    # Decide on plan change: revert immediately or wait? Revert status now.
-                    # user.plan = 'free' # Optional: Revert plan immediately
-                    needs_commit = True
-                    print(f"INFO: User {user.id} subscription status updated to {new_status}.")
-                else:
-                     print(f"WARN: Received cancellation for sub ID {paddle_sub_id} but user {user.id} has sub ID {user.paddle_subscription_id}")
-
-            # --- Subscription Updated (e.g., payment method update, pause/resume) ---
+            # --- Subscription Status Change Events ---
             elif event_type == 'subscription.updated':
-                print(f"INFO: Processing {event_type} for user {user.id}")
-                paddle_sub_id = event_payload.get('id')
-                # Check if the update is for the user's current subscription
-                if user.paddle_subscription_id == paddle_sub_id:
-                    new_status = event_payload.get('status')
-                    if new_status: user.subscription_status = new_status
-                    # Update management URLs as they might change
-                    needs_commit = True
-                    print(f"INFO: User {user.id} subscription status updated to {new_status} (via updated event).")
-                else:
-                     print(f"WARN: Received update for sub ID {paddle_sub_id} but user {user.id} has sub ID {user.paddle_subscription_id}")
+                 if user.paddle_subscription_id == paddle_sub_id:
+                     print(f"INFO: Processing {event_type} for user {user.id}, sub {paddle_sub_id}")
+                     state_changed = False
+                     # Update status only if it changed
+                     if new_status and user.subscription_status != new_status:
+                         user.subscription_status = new_status
+                         state_changed = True
+                         print(f"INFO: User {user.id} subscription status updated to {new_status}.")
+                     # Update management URLs if provided and different
+                     management_urls = event_payload.get('management_urls', {})
+                     update_url = management_urls.get('update_payment_method')
+                     cancel_url = management_urls.get('cancel')
+                     if update_url and user.paddle_update_url != update_url:
+                         user.paddle_update_url = update_url
+                         state_changed = True
+                     if cancel_url and user.paddle_cancel_url != cancel_url:
+                         user.paddle_cancel_url = cancel_url
+                         state_changed = True
+                     if state_changed: needs_commit = True
+                 else: print(f"WARN: Mismatched sub ID for {event_type}")
 
-            # --- Other events ---
+            elif event_type == 'subscription.paused':
+                 if user.paddle_subscription_id == paddle_sub_id and user.subscription_status != 'paused':
+                      print(f"INFO: Processing {event_type} for user {user.id}, sub {paddle_sub_id}")
+                      user.subscription_status = 'paused'
+                      needs_commit = True
+                 else: print(f"WARN: Mismatched sub ID or already paused for {event_type}")
+
+            elif event_type == 'subscription.resumed': # Check exact event name in Paddle docs
+                 if user.paddle_subscription_id == paddle_sub_id and user.subscription_status != 'active':
+                      print(f"INFO: Processing {event_type} for user {user.id}, sub {paddle_sub_id}")
+                      user.subscription_status = 'active' # Resumed to active
+                      needs_commit = True
+                 else: print(f"WARN: Mismatched sub ID or already active for {event_type}")
+
+            elif event_type == 'subscription.past_due':
+                 if user.paddle_subscription_id == paddle_sub_id and user.subscription_status != 'past_due':
+                     print(f"INFO: Processing {event_type} for user {user.id}, sub {paddle_sub_id}")
+                     user.subscription_status = 'past_due'
+                     needs_commit = True
+                 else: print(f"WARN: Mismatched sub ID or already past_due for {event_type}")
+
+            elif event_type == 'subscription.canceled':
+                 if user.paddle_subscription_id == paddle_sub_id and user.subscription_status != 'canceled':
+                     print(f"INFO: Processing {event_type} for user {user.id}, sub {paddle_sub_id}")
+                     user.subscription_status = 'canceled'
+                     user.plan = 'free' # Revert plan immediately upon cancellation notification
+                     needs_commit = True
+                 else: print(f"WARN: Mismatched sub ID or already canceled for {event_type}")
+
             else:
-                print(f"DEBUG: Ignored webhook event type: {event_type}")
+                print(f"DEBUG: Ignored known/unhandled webhook event type: {event_type}")
 
-            # --- Commit DB Changes if needed ---
+            # Commit DB changes if any updates were made
             if needs_commit:
                 try:
                     db.session.commit()
-                    print(f"INFO: Database committed successfully for user {user.id} after event {event_type}")
+                    print(f"INFO: Database commit successful for user {user.id} after event {event_type}")
                 except Exception as e:
                     db.session.rollback()
-                    print(f"ERROR: DB Error committing changes for user {user.id} after {event_type}: {e}")
-                    abort(500) # Internal error processing update
+                    print(f"ERROR: DB Error committing changes for user {user.id} after event {event_type}: {e}")
+                    abort(500) # Signal internal error to Paddle
 
-        else:
-            # Could not find user associated with webhook
-            print(f"ERROR: Could not find user for webhook event: {event_type}")
-            # Still return 200 OK to Paddle even if user not found, to prevent retries.
-            pass # Important to pass here, don't abort
-    # --- End Event Handling Logic ---
+        else: # User not found
+             print(f"ERROR: Could not find user to process webhook event: {event_type}")
+             # Still return 200 OK to prevent Paddle retries for this event
+             pass
 
-    # ---> CORRECTED INDENTATION: This except matches the 'try' around event processing <---
-    except Exception as e: # (Level 1 indent)
-         # ---> Indent this block (Level 2)
-         print(f"ERROR: Failed to parse or process webhook JSON payload: {e}")
-         # Return 200 to prevent Paddle retries if payload was malformed/unexpected,
-         # but log error for investigation.
+    # Catch errors during JSON parsing or initial processing
+    except Exception as e:
+         print(f"ERROR: Failed to parse or process webhook payload: {e}")
+         # Return 200 to prevent Paddle retries if payload might be malformed
          return jsonify({'status': 'processing_error'}), 200
-    # --- END Event Processing Try/Except ---
 
-    # 3. Acknowledge Receipt to Paddle if processed successfully or ignored gracefully
-    return jsonify({'status': 'received'}), 200 # (Level 1 indent)
+    # Acknowledge receipt to Paddle if we didn't abort
+    return jsonify({'status': 'received'}), 200
 
 # --- End of paddle_webhook function ---
 
