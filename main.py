@@ -8,7 +8,7 @@ import uuid
 import hmac
 import hashlib
 import time # Might be needed for timestamp checking depending on Paddle's method
-from flask import request, abort, jsonify # Import request, abort, jsonify
+from flask import request, abort, jsonify, flash, redirect, url_for # Import request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, current_user, logout_user, login_required
 from flask_bcrypt import Bcrypt
