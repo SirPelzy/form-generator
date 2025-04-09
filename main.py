@@ -23,6 +23,8 @@ import requests
 import csv
 import io # Input/Output operations
 from flask import Response # To build the CSV response
+import sendgrid
+from sendgrid.helpers.mail import Mail, Email, To, Content
 
 # --- Load Paddle Configuration ---
 PADDLE_VENDOR_ID = os.environ.get('PADDLE_VENDOR_ID')
@@ -93,6 +95,38 @@ ALLOWED_FIELD_TYPES = [
     'text', 'email', 'textarea', 'number', 'date',
     'checkbox', 'radio', 'select'
 ]
+
+# --- Email Sending Helper ---
+def send_notification_email(to_email, subject, html_content):
+    # Ensure required env vars are set
+    sg_api_key = os.environ.get('SENDGRID_API_KEY')
+    from_email_addr = os.environ.get('MAIL_FROM_EMAIL')
+
+    if not sg_api_key or not from_email_addr:
+        print("ERROR: SendGrid API Key or From Email not configured. Cannot send email.")
+        return False # Indicate failure
+
+    sg = sendgrid.SendGridAPIClient(api_key=sg_api_key)
+    from_email = Email(from_email_addr)
+    to_email_obj = To(to_email) # Use To helper for clarity
+    content = Content("text/html", html_content)
+    mail = Mail(from_email, to_email_obj, subject, content)
+
+    try:
+        print(f"Attempting to send email notification to {to_email}...")
+        response = sg.client.mail.send.post(request_body=mail.get())
+        print(f"SendGrid response status code: {response.status_code}")
+        if 200 <= response.status_code < 300:
+             print("Email sent successfully!")
+             return True
+        else:
+             print(f"SendGrid error: Status Code {response.status_code}")
+             print(f"Response Body: {response.body}")
+             return False
+    except Exception as e:
+        print(f"ERROR sending email via SendGrid: {e}")
+        return False
+# --- End Email Helper ---
 
 # --- Routes ---
 
@@ -403,6 +437,32 @@ def public_form(form_key):
             new_submission = Submission(form_id=form.id, data=data_json)
             db.session.add(new_submission)
             db.session.commit()
+            print(f"Submission {new_submission.id} saved successfully for form {form.id}")
+
+            # --- START: Send Email Notification (AFTER commit) ---
+            form_owner = form.author
+            if form_owner and form_owner.plan == 'pro' and form_owner.subscription_status == 'active':
+                print(f"User {form_owner.id} is Pro, attempting email notification...")
+                subject = f"New Submission for '{form.title}'"
+                # Format submission data for email body (simple example)
+                email_body_html = f"<h3>New Submission Received</h3><p>Form: {form.title}</p><p>Submitted At: {new_submission.submitted_at.strftime('%Y-%m-%d %H:%M:%S')} UTC</p><hr>"
+                email_body_html += "<h4>Submitted Data:</h4><ul>"
+                for field in fields: # Use fields list fetched earlier
+                    field_key = f"field_{field.id}"
+                    value = submission_data_dict.get(field_key, '(empty)')
+                    email_body_html += f"<li><strong>{field.label}:</strong> {value}</li>" # Consider escaping value if needed
+                email_body_html += "</ul><hr>"
+                view_link = url_for('view_submissions', form_id=form.id, _external=True)
+                email_body_html += f"<p><a href='{view_link}'>View all submissions in dashboard</a></p>"
+
+                # Call the helper function (wrap in try/except just in case)
+                try:
+                   send_notification_email(form_owner.email, subject, email_body_html)
+                except Exception as mail_e:
+                   print(f"ERROR: Exception occurred during email send call: {mail_e}")
+                   # Don't fail the whole request if email fails, just log it
+
+            # --- END: Send Email Notification ---
             flash('Thank you! Your submission has been recorded.', 'success')
             return redirect(url_for('public_form', form_key=form_key)) # PRG pattern
 
