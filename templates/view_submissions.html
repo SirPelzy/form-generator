@@ -8,7 +8,16 @@
             <h2>Submissions: {{ form.title }}</h2>
             <p class="text-muted mb-0">Viewing {{ submissions|length }} submission(s).</p> {# mb-0 #}
         </div>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">&laquo; Back to Dashboard</a>
+        <div> {# Group buttons together #}
+            {# --- START: Add Download Button (Conditional) --- #}
+            {% if current_user.plan == 'pro' and current_user.subscription_status == 'active' %}
+            <a href="{{ url_for('download_submissions_csv', form_id=form.id) }}" class="btn btn-sm btn-success me-2">
+                <i class="bi bi-download me-1"></i> Download CSV
+            </a>
+            {% endif %}
+            {# --- END: Download Button --- #}
+            <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-secondary">&laquo; Back to Dashboard</a>
+        </div>
     </div>
     {# Removed <hr> #}
 
