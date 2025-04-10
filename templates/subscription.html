@@ -24,7 +24,7 @@
                 {% if user.plan == 'free' %}
                     {# User is Free - Show Upgrade Button #}
                     <a href="{{ url_for('pricing') }}" class="btn btn-success">Upgrade to Pro</a>
-                    <p class="small text-muted mt-2">Upgrade to unlock more forms, higher submission limits, and remove branding.</p>
+                    <p class="small text-muted mt-2">Upgrade to unlock more forms, Email Notifications (on new submission), Custom Redirect URL (after submission), and Export your Submissions to CSV.</p>
 
                 {# --- This is the main block for Pro/Active users --- #}
                 {% elif user.plan == 'pro' and user.subscription_status == 'active' %}
