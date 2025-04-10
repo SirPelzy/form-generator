@@ -234,58 +234,85 @@ def create_form():
     return render_template('create_form.html', title='Create Form')
 
 # --- EDIT FORM Route (Handles Adding Fields and Displaying) ---
+
 @app.route('/edit_form/<int:form_id>', methods=['GET', 'POST'])
 @login_required
 def edit_form(form_id):
-     form = Form.query.get_or_404(form_id)
+    form_to_edit = Form.query.get_or_404(form_id)
+    if form_to_edit.author != current_user:
+        flash('You do not have permission to edit this form.', 'danger')
+        return redirect(url_for('dashboard'))
 
-     # Check ownership
-     if form.author != current_user:
-          flash('You do not have permission to edit this form.', 'danger')
-          return redirect(url_for('dashboard'))
+    if request.method == 'POST':
+        # Single CSRF check for any POST to this route
+        try:
+            validate_csrf(request.form.get('csrf_token'))
+        except ValidationError:
+            flash('Invalid CSRF token.', 'danger')
+            return redirect(url_for('edit_form', form_id=form_id))
 
-     # --- Handle ADDING a new field (POST request) ---
-     if request.method == 'POST':
-          field_label = request.form.get('field_label')
-          field_type = request.form.get('field_type')
-          # Checkbox value: present in form data if checked, absent if not
-          field_required = 'field_required' in request.form
-          # TODO: Handle 'options' later if field_type is 'radio' or 'select'
-          field_options = request.form.get('field_options') # Basic handling for now
+        action = request.form.get('action') # Check which form was submitted
 
-          # Validation
-          if not field_label:
-               flash('Field label is required.', 'warning')
-          elif field_type not in ALLOWED_FIELD_TYPES:
-               flash('Invalid field type selected.', 'warning')
-          else:
-               # Create new Field object
-               new_field = Field(label=field_label,
-                                 field_type=field_type,
-                                 required=field_required,
-                                 options=field_options if field_type in ['radio', 'select'] else None,
-                                 form_id=form.id)
-               try:
+        # --- Handle Settings Update ---
+        if action == 'update_settings':
+            print(f"DEBUG: Updating settings for form {form_id}")
+            # Basic validation for title
+            new_title = request.form.get('form_title')
+            if not new_title:
+                flash('Form title is required.', 'warning')
+            else:
+                form_to_edit.title = new_title
+                form_to_edit.description = request.form.get('form_description')
+                # Save Pro fields only if user is Pro
+                if current_user.plan == 'pro' and current_user.subscription_status == 'active':
+                    # Optional: Add URL validation here (e.g., check if valid format)
+                    form_to_edit.redirect_url = request.form.get('redirect_url') or None # Save None if empty
+                    form_to_edit.webhook_url = request.form.get('webhook_url') or None # Save None if empty
+                try:
+                    db.session.commit()
+                    flash("Form settings updated successfully.", "success")
+                except Exception as e:
+                    db.session.rollback()
+                    flash(f"Error updating settings: {e}", "danger")
+                    print(f"Error updating settings form {form_id}: {e}")
+            # Redirect back to edit page after attempting save
+            return redirect(url_for('edit_form', form_id=form_id))
+
+        # --- Handle Adding a New Field ---
+        elif action == 'add_field':
+            print(f"DEBUG: Adding field to form {form_id}")
+            # Keep existing logic for adding field using request.form
+            field_label = request.form.get('field_label')
+            field_type = request.form.get('field_type')
+            field_required = 'field_required' in request.form
+            field_options = request.form.get('field_options')
+
+            if not field_label: flash('Field label is required.', 'warning')
+            elif field_type not in ALLOWED_FIELD_TYPES: flash('Invalid field type selected.', 'warning')
+            else:
+                options = field_options if field_type in ['radio', 'select'] else None
+                new_field = Field(label=field_label, field_type=field_type, required=field_required,
+                                  options=options, form_id=form_id)
+                try:
                     db.session.add(new_field)
                     db.session.commit()
                     flash(f'Field "{field_label}" added successfully.', 'success')
-               except Exception as e:
-                    db.session.rollback()
-                    flash(f'Error adding field: {e}', 'danger')
-                    print(f"Error adding field: {e}")
+                except Exception as e:
+                    db.session.rollback(); flash(f'Error adding field: {e}', 'danger'); print(f"Error adding field: {e}")
+            # Redirect back to edit page after attempting add
+            return redirect(url_for('edit_form', form_id=form_id))
+        else:
+            # Unknown action
+            flash("Invalid form action submitted.", "warning")
+            return redirect(url_for('edit_form', form_id=form_id))
 
-          # Redirect back to the same edit page to see the updated list
-          return redirect(url_for('edit_form', form_id=form.id))
-
-     # --- GET Request: Display form info and existing fields ---
-     # Query existing fields for this form
-     existing_fields = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
-
-     return render_template('edit_form.html',
-                            title=f'Edit Form: {form.title}',
-                            form=form,
-                            fields=existing_fields, # Pass fields to template
-                            allowed_field_types=ALLOWED_FIELD_TYPES) # Pass types for dropdown
+    # --- Display Page (GET request) ---
+    fields = Field.query.filter_by(form_id=form_id).order_by(Field.id).all()
+    return render_template('edit_form.html',
+                           title=f'Edit Form: {form_to_edit.title}',
+                           form=form_to_edit, # Pass the Form model object
+                           fields=fields,
+                           allowed_field_types=ALLOWED_FIELD_TYPES)
 
 
 # --- DELETE FIELD Route ---
