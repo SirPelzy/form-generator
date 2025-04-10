@@ -1,0 +1,23 @@
+{# templates/_field_row.html #}
+{# Renders a single list item for an existing field #}
+{# Expects a 'field' object to be passed in context #}
+
+<li class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2" id="field-row-{{ field.id }}"> {# Added ID #}
+    {# Field Info #}
+    <div class="me-auto">
+        <strong class="me-2">{{ field.label }}</strong>
+        <span class="badge bg-secondary rounded-pill me-1">{{ field.field_type | capitalize }}</span>
+        {% if field.required %}<span class="badge bg-warning text-dark rounded-pill">Required</span>{% endif %}
+        {% if field.options %}<small class="d-block text-muted mt-1">Options: {{ field.options | replace('|', ', ') }}</small>{% endif %}
+    </div>
+     {# Action Buttons #}
+    <div class="field-actions flex-shrink-0">
+        {# Edit button will be updated later for HTMX #}
+        <a href="{{ url_for('edit_field', field_id=field.id) }}" class="btn btn-outline-primary btn-sm me-1">Edit</a>
+        {# Delete button will be updated later for HTMX #}
+        <form action="{{ url_for('delete_field', field_id=field.id) }}" method="POST" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete field \'{{ field.label }}\'?');">Delete</button>
+        </form>
+    </div>
+</li>
