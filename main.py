@@ -128,6 +128,40 @@ def send_notification_email(to_email, subject, html_content):
         return False
 # --- End Email Helper ---
 
+TEMPLATES = {
+    'contact_us': {
+        'name': 'Contact Us Form',
+        'description': 'A standard contact form with Name, Email, and Message fields.',
+        'fields': [
+            {'label': 'Name', 'field_type': 'text', 'required': True, 'options': None},
+            {'label': 'Email', 'field_type': 'email', 'required': True, 'options': None},
+            {'label': 'Message', 'field_type': 'textarea', 'required': True, 'options': None},
+        ]
+    },
+    'simple_feedback': {
+        'name': 'Simple Feedback Form',
+        'description': 'Collect general feedback with optional contact info.',
+        'fields': [
+            {'label': 'Feedback', 'field_type': 'textarea', 'required': True, 'options': None},
+            {'label': 'Rating (1-5)', 'field_type': 'select', 'required': False, 'options': '1,2,3,4,5'},
+            {'label': 'Name (Optional)', 'field_type': 'text', 'required': False, 'options': None},
+            {'label': 'Email (Optional)', 'field_type': 'email', 'required': False, 'options': None},
+        ]
+    },
+    'event_rsvp': {
+        'name': 'Event RSVP Form',
+        'description': 'Collect attendance confirmation and guest count for an event.',
+        'fields': [
+            {'label': 'Name', 'field_type': 'text', 'required': True, 'options': None},
+            {'label': 'Email', 'field_type': 'email', 'required': True, 'options': None},
+            {'label': 'Attending?', 'field_type': 'radio', 'required': True, 'options': 'Yes, I will attend,No, I cannot attend'},
+            {'label': 'Number of Guests (including yourself)', 'field_type': 'number', 'required': False, 'options': None},
+        ]
+    }
+    # Add more templates here later
+}
+# --- End Templates ---
+
 # --- Routes ---
 @app.route('/')
 @app.route('/home')
