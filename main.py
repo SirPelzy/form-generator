@@ -143,7 +143,7 @@ TEMPLATES = {
         'description': 'Collect general feedback with optional contact info.',
         'fields': [
             {'label': 'Feedback', 'field_type': 'textarea', 'required': True, 'options': None},
-            {'label': 'Rating (1-5)', 'field_type': 'select', 'required': False, 'options': '1,2,3,4,5'},
+            {'label': 'Rating (1-5)', 'field_type': 'select', 'required': False, 'options': '1|2|3|4|5'},
             {'label': 'Name (Optional)', 'field_type': 'text', 'required': False, 'options': None},
             {'label': 'Email (Optional)', 'field_type': 'email', 'required': False, 'options': None},
         ]
