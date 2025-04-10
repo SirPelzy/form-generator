@@ -129,38 +129,6 @@ def send_notification_email(to_email, subject, html_content):
 # --- End Email Helper ---
 
 # --- Routes ---
-
-# !!!!!! TEMPORARY ROUTE FOR DB SCHEMA RESET - DELETES ALL DATA !!!!!!
-# !!!!!! REMOVE IMMEDIATELY AFTER USE !!!!!!
-
-# --- CHOOSE AND SET YOUR OWN UNIQUE SECRET PATH BELOW ---
-# Replace 'replace-this-with-your-own-random-string-abc123xyz'
-# with a long, random mix of letters and numbers only you know.
-SECRET_DB_RESET_PATH = 'replace-this-with-your-own-random-string-abc123xyz'
-# --- END CHOOSE SECRET PATH ---
-
-@app.route(f'/{SECRET_DB_RESET_PATH}')
-def temp_reset_tables():
-    # IMPORTANT: This route deletes ALL data and recreates tables.
-    print(f"ACCESSING TEMPORARY DB RESET ROUTE: /{SECRET_DB_RESET_PATH}")
-    try:
-        # Ensure commands run within Flask's application context
-        with app.app_context():
-             print("App context active. Dropping all tables (DATA WILL BE LOST)...")
-             # Make sure 'db' is the imported SQLAlchemy instance
-             from models import db # Ensure db is in scope
-             db.drop_all() # <-- DANGER: Deletes all tables and data!
-             print("Tables dropped. Creating all tables with new schema...")
-             db.create_all() # <-- Recreates tables based on updated models.py
-             print("db.create_all() command finished.")
-        # Return a success message to the browser
-        return f"OK: db.drop_all() and db.create_all() executed via /{SECRET_DB_RESET_PATH}. Database reset. REMOVE THIS ROUTE NOW!", 200
-    except Exception as e:
-        print(f"ERROR during temporary DB reset route: {e}")
-        # Return an error message to the browser
-        return f"Error during DB reset: {e}", 500
-# !!!!!! END OF TEMPORARY ROUTE - REMEMBER TO REMOVE !!!!!!
-
 @app.route('/')
 @app.route('/home')
 def home():
