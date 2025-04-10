@@ -736,6 +736,81 @@ def edit_field(field_id):
                            field=field_to_edit, # Pass the field object to pre-fill form
                            allowed_field_types=ALLOWED_FIELD_TYPES) # For the type dropdown
 
+
+# --- beginning add_form_field function ---
+@app.route('/forms/<int:form_id>/fields', methods=['POST'])
+@login_required
+def add_form_field(form_id):
+    """Handles HTMX request to add a new field to a form."""
+    form = Form.query.get_or_404(form_id)
+
+    # --- Ownership Check ---
+    if form.author != current_user:
+        # HTMX typically expects HTML fragments or specific headers for errors
+        # Returning a simple error message or a 403 might be handled differently
+        # by HTMX depending on configuration. Let's flash and redirect the
+        # underlying page for simplicity now, though this isn't ideal HTMX.
+        # A better HTMX way involves returning an error message fragment and using hx-swap-oob.
+        flash("You don't have permission to modify this form.", "danger")
+        # Sending a header htmx can use to redirect
+        response = make_response(redirect(url_for('dashboard'))) # Need make_response from flask
+        response.headers['HX-Redirect'] = url_for('dashboard')
+        return response
+
+
+    # --- CSRF Check ---
+    try:
+        validate_csrf(request.form.get('csrf_token'))
+    except ValidationError:
+        # Return an error response suitable for HTMX (e.g., part of the form with errors)
+        # For now, just flash and indicate failure (not ideal HTMX)
+        flash("Invalid CSRF token.", "danger")
+        response = make_response(redirect(url_for('edit_form', form_id=form_id))) # Redirect back
+        response.headers['HX-Redirect'] = url_for('edit_form', form_id=form_id)
+        return response
+
+
+    # --- Process Field Data (Similar to old POST logic) ---
+    field_label = request.form.get('field_label')
+    field_type = request.form.get('field_type')
+    field_required = 'field_required' in request.form
+    field_options = request.form.get('field_options')
+
+    # Basic Validation (Could eventually return form fragment with errors for HTMX)
+    if not field_label:
+        flash('Field label is required.', 'warning')
+        # Ideally return error within HTMX target, but redirect for now
+        response = make_response(redirect(url_for('edit_form', form_id=form_id)))
+        response.headers['HX-Redirect'] = url_for('edit_form', form_id=form_id)
+        return response
+    elif field_type not in ALLOWED_FIELD_TYPES:
+        flash('Invalid field type selected.', 'warning')
+        response = make_response(redirect(url_for('edit_form', form_id=form_id)))
+        response.headers['HX-Redirect'] = url_for('edit_form', form_id=form_id)
+        return response
+    else:
+        # Data seems valid, create the field
+        options = field_options if field_type in ['radio', 'select'] else None
+        new_field = Field(label=field_label, field_type=field_type, required=field_required,
+                          options=options, form_id=form_id)
+        try:
+            db.session.add(new_field)
+            db.session.commit()
+            flash(f'Field "{field_label}" added successfully.', 'success')
+            # --- IMPORTANT: Return ONLY the HTML fragment for the new row ---
+            return render_template('_field_row.html', field=new_field)
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding field: {e}', 'danger')
+            print(f"Error adding field via HTMX to form {form_id}: {e}")
+            # Return an error message or status that HTMX can handle
+            # For now, redirect the whole page on unexpected save error
+            response = make_response(redirect(url_for('edit_form', form_id=form_id)))
+            response.headers['HX-Redirect'] = url_for('edit_form', form_id=form_id)
+            return response
+
+# --- End add_form_field function ---
+
 @app.route('/pricing')
 def pricing():
     # Get necessary Paddle config from environment variables
