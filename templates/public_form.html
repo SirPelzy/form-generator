@@ -63,11 +63,11 @@
                     {% elif field.field_type == 'select' %}
                         <select class="{{ input_class }}" id="{{ field_name }}" name="{{ field_name }}" {% if field.required %}required{% endif %}>
                             <option value="" {% if not submitted_data.get(field_name) %}selected{% endif %} disabled>-- Please select --</option>
-                            {% set options_list = field.options.split(',') %}
+                            {% set options_list = field.options.split('|') %}
                             {% for option in options_list %}{% set opt_val = option.strip() %}<option value="{{ opt_val }}" {% if submitted_data.get(field_name) == opt_val %}selected{% endif %}>{{ opt_val }}</option>{% endfor %}
                         </select>
                      {% elif field.field_type == 'radio' %}
-                        {% set options_list = field.options.split(',') %}
+                        {% set options_list = field.options.split('|') %}
                         {% for option in options_list %}
                             {% set opt_val = option.strip() %}{% set radio_id = field_name + '_' + loop.index|string %}
                             <div class="form-check {% if loop.first %}pt-1{% endif %} {% if has_error %}is-invalid{% endif %}">
