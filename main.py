@@ -154,7 +154,7 @@ TEMPLATES = {
         'fields': [
             {'label': 'Name', 'field_type': 'text', 'required': True, 'options': None},
             {'label': 'Email', 'field_type': 'email', 'required': True, 'options': None},
-            {'label': 'Attending?', 'field_type': 'radio', 'required': True, 'options': 'Yes, I will attend,No, I cannot attend'},
+            {'label': 'Attending?', 'field_type': 'radio', 'required': True, 'options': 'Yes, I will attend|No, I cannot attend'},
             {'label': 'Number of Guests (including yourself)', 'field_type': 'number', 'required': False, 'options': None},
         ]
     }
