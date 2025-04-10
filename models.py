@@ -47,6 +47,9 @@ class Form(db.Model):
 
     # Foreign key: Links this form to the user who created it
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    redirect_url = db.Column(db.String(500), nullable=True) # For custom redirect after submission
+    webhook_url = db.Column(db.String(500), nullable=True)  # For outbound webhook notification
+    # --- END NEW COLUMNS ---
 
     # Relationship: A form contains multiple fields
     fields = db.relationship('Field', backref='form', lazy=True, cascade="all, delete-orphan")
