@@ -492,6 +492,44 @@ def public_form(form_key):
             flash('Thank you! Your submission has been recorded.', 'success')
             return redirect(url_for('public_form', form_key=form_key)) # PRG pattern
 
+            if form_owner and form_owner.plan == 'pro' and form_owner.subscription_status == 'active' and form.webhook_url:
+            webhook_payload = {
+                'form_id': form.id,
+                'form_title': form.title,
+                'submission_id': new_submission.id,
+                'submitted_at': new_submission.submitted_at.isoformat() + 'Z', # ISO 8601 format
+                'data': submission_data_dict # The dict of field_id: value pairs
+               }
+               try:
+                   print(f"DEBUG: Sending webhook for sub {new_submission.id} to {form.webhook_url}")
+                # Using requests library (ensure imported: import requests)
+                   response = requests.post(form.webhook_url, json=webhook_payload, timeout=5)
+                # Log status but don't let webhook failure stop user flow
+                   print(f"DEBUG: Webhook response status: {response.status_code}")
+                # Could add check here: if response.status_code >= 400: log error body
+               except requests.exceptions.RequestException as webhook_e:
+                   print(f"ERROR: Failed to send webhook (network) to {form.webhook_url}: {webhook_e}")
+               except Exception as webhook_e:
+                   print(f"ERROR: Unexpected error sending webhook: {webhook_e}")
+        # --- END: Send Outbound Webhook ---
+
+            if form_owner and form_owner.plan == 'pro' and form_owner.subscription_status == 'active' and form.redirect_url:
+                print(f"DEBUG: Pro user has redirect URL. Redirecting to: {form.redirect_url}")
+            # Basic validation for safety
+                if form.redirect_url.lower().startswith(('http://', 'https://')):
+                     return redirect(form.redirect_url)
+                else:
+                     print(f"WARN: Invalid redirect URL protocol for form {form.id}: {form.redirect_url}")
+                     flash('Submission recorded successfully. Invalid redirect URL configured by form owner.', 'info')
+                 # Fallback to default thank you flash on the form page
+                     return redirect(url_for('public_form', form_key=form_key))
+            else:
+             # Default redirect (shows flash message on same page)
+                 flash('Thank you! Your submission has been recorded.', 'success')
+                 return redirect(url_for('public_form', form_key=form_key))
+        # --- END: Custom Redirect Logic ---
+
+        
         except Exception as e:
             # Handle potential database errors during save
             db.session.rollback()
