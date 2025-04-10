@@ -1148,6 +1148,26 @@ def privacy_policy():
     # Renders the privacy.html template
     return render_template('privacy.html', title='Privacy Policy')
 
+
+@app.route('/contact')
+def contact():
+    # Get the specific form key from environment variable
+    contact_key = os.environ.get('CONTACT_FORM_KEY')
+
+    if not contact_key:
+        # Handle case where contact form key isn't set in environment
+        flash("Contact form is currently unavailable.", "warning")
+        # Optionally log an error for yourself here
+        print("ERROR: CONTACT_FORM_KEY environment variable not set.")
+
+    # You could optionally fetch the form title here if needed:
+    # form = Form.query.filter_by(unique_key=contact_key).first()
+    # title = form.title if form else "Contact Us"
+
+    return render_template('contact.html',
+                           title='Contact Us',
+                           contact_form_key=contact_key) # Pass key to template
+
 if __name__ == '__main__':
     # Ensure database tables are created before running the app for the first time
     # with app.app_context():
