@@ -384,172 +384,163 @@ def delete_form(form_id):
     # Redirect back to the dashboard after deletion
     return redirect(url_for('dashboard'))
 
-# --- PUBLIC FORM DISPLAY & SUBMISSION Route ---
 @app.route('/form/<string:form_key>', methods=['GET', 'POST'])
-@limiter.limit("60 per hour", methods=['POST']) # Keep rate limit
+@limiter.limit("60 per hour", methods=['POST']) # Rate limit POST requests
 def public_form(form_key):
     # Find the form by its unique key, return 404 if not found
     # Eager load the author to avoid extra query later when checking plan
     form = Form.query.options(db.joinedload(Form.author)).filter_by(unique_key=form_key).first_or_404()
-    # Fetch fields once for both GET and POST logic if needed for rendering
+    # Fetch fields once for use in both GET and POST logic
     fields = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
 
     # --- Handle form SUBMISSION (POST request) ---
-    if request.method == 'POST':
+    if request.method == 'POST': # Indent Level 1
         # --- CSRF Check ---
-        try:
+        try: # Indent Level 2
             validate_csrf(request.form.get('csrf_token'))
-        except ValidationError:
+        except ValidationError: # Indent Level 2
             flash('Invalid submission token.', 'warning')
             # Pass necessary variables back for re-rendering
             return render_template('public_form.html', form=form, fields=fields, errors={}, submitted_data=request.form)
 
-        # --- Initialize variables ---
+        # --- Initialize variables --- (Indent Level 2)
         submitted_data = request.form
         errors = {} # Define errors dict before checks
         limit_reached = False
         form_owner = form.author # Get owner (already loaded)
 
-        # --- START: Updated Submission Limit Check ---
-        # Check limits ONLY if the form owner exists and is on the free plan
-        if form_owner and form_owner.plan == 'free': # <--- Check actual plan
-            today = date.today()
+        # --- START: Updated Submission Limit Check --- (Indent Level 2)
+        if form_owner and form_owner.plan == 'free': # Check actual plan (Indent Level 3)
+            today = date.today() # Indent Level 4
             start_of_month = datetime(today.year, today.month, 1)
 
-            # Count submissions this month for ALL forms owned by this user
-            submission_count = db.session.query(Submission.id).join(Form).filter(
+            submission_count = db.session.query(Submission.id).join(Form).filter( # Indent Level 4
                 Form.user_id == form_owner.id,
                 Submission.submitted_at >= start_of_month
             ).count()
 
-            if submission_count >= MAX_SUBMISSIONS_FREE_TIER:
-                limit_reached = True
+            if submission_count >= MAX_SUBMISSIONS_FREE_TIER: # Indent Level 4
+                limit_reached = True # Indent Level 5
                 print(f"User {form_owner.id} (Free Tier) hit submission limit ({submission_count}/{MAX_SUBMISSIONS_FREE_TIER}) for form {form.id}")
                 errors['_limit_error'] = f"This form cannot accept submissions right now (monthly limit reached)."
                 flash('Monthly submission limit reached for this form.', 'warning')
                 # Fall through to the error check below to re-render form
         # --- END: Updated Submission Limit Check ---
 
-        # --- Server-Side Validation Loop (Run if limit not reached) ---
+        # --- Server-Side Validation Loop (Run if limit not reached) --- (Indent Level 2)
         if not limit_reached:
-            for field in fields:
-                field_name = f"field_{field.id}"
+            for field in fields: # Indent Level 3
+                field_name = f"field_{field.id}" # Indent Level 4
                 value = submitted_data.get(field_name)
-                if field.required:
-                    is_missing = False
-                    if field.field_type == 'checkbox':
-                        if field_name not in submitted_data: is_missing = True
-                    elif not value: is_missing = True
-                    if is_missing:
-                        errors[field_name] = "This field is required."
+                if field.required: # Indent Level 4
+                    is_missing = False # Indent Level 5
+                    if field.field_type == 'checkbox': # Indent Level 5
+                        if field_name not in submitted_data: is_missing = True # Indent Level 6
+                    elif not value: # Indent Level 5
+                        is_missing = True # Indent Level 6
+                    if is_missing: # Indent Level 5
+                        errors[field_name] = "This field is required." # Indent Level 6
 
-        # --- Check if any errors occurred (limit OR validation) ---
+        # --- Check if any errors occurred (limit OR validation) --- (Indent Level 2)
         if errors:
-            if not limit_reached: # Only flash validation error if no limit error occurred
+            if not limit_reached: # Indent Level 3
                 flash('Please correct the errors below.', 'warning')
-            # Re-render the template with errors and submitted data
-            return render_template('public_form.html', form=form, fields=fields, errors=errors, submitted_data=submitted_data)
+            return render_template('public_form.html', form=form, fields=fields, errors=errors, submitted_data=submitted_data) # Indent Level 3
 
-        # --- If NO errors (limit or validation), proceed to save ---
+        # --- If NO errors (limit or validation), proceed to save --- (Indent Level 2)
         submission_data_dict = {}
-        try:
-            for field in fields:
-                field_name = f"field_{field.id}"
+        new_submission = None # Define before try block
+        try: # Indent Level 3
+            for field in fields: # Indent Level 4
+                field_name = f"field_{field.id}" # Indent Level 5
                 if field.field_type == 'checkbox': value = 'true' if field_name in submitted_data else 'false'
                 else: value = submitted_data.get(field_name)
-                submission_data_dict[field_name] = value
+                submission_data_dict[field_name] = value # Indent Level 5
 
-            data_json = json.dumps(submission_data_dict)
+            data_json = json.dumps(submission_data_dict) # Indent Level 4
             new_submission = Submission(form_id=form.id, data=data_json)
             db.session.add(new_submission)
-            db.session.commit()
-            print(f"Submission {new_submission.id} saved successfully for form {form.id}")
+            db.session.commit() # Commit FIRST
+            print(f"Submission {new_submission.id} saved successfully for form {form.id}") # Indent Level 4
 
-            # --- START: Send Email Notification (AFTER commit) ---
-            form_owner = form.author
+            # --- Actions AFTER successful commit --- (Indent Level 4)
+
+            # --- START: Send Email Notification ---
+            # Ensure form_owner is defined (it should be from earlier)
             if form_owner and form_owner.plan == 'pro' and form_owner.subscription_status == 'active':
+                # ---> Indent this block (Level 5)
                 print(f"User {form_owner.id} is Pro, attempting email notification...")
                 subject = f"New Submission for '{form.title}'"
-                # Format submission data for email body (simple example)
-                email_body_html = f"<h3>New Submission Received</h3><p>Form: {form.title}</p><p>Submitted At: {new_submission.submitted_at.strftime('%Y-%m-%d %H:%M:%S')} UTC</p><hr>"
-                email_body_html += "<h4>Submitted Data:</h4><ul>"
-                for field in fields: # Use fields list fetched earlier
+                email_body_html = f"..." # Keep your HTML generation logic here
+                for field in fields:
                     field_key = f"field_{field.id}"
                     value = submission_data_dict.get(field_key, '(empty)')
-                    email_body_html += f"<li><strong>{field.label}:</strong> {value}</li>" # Consider escaping value if needed
+                    email_body_html += f"<li><strong>{field.label}:</strong> {value}</li>"
                 email_body_html += "</ul><hr>"
                 view_link = url_for('view_submissions', form_id=form.id, _external=True)
                 email_body_html += f"<p><a href='{view_link}'>View all submissions in dashboard</a></p>"
-
-                # Call the helper function (wrap in try/except just in case)
                 try:
-                   send_notification_email(form_owner.email, subject, email_body_html)
+                    # ---> Indent this block (Level 6)
+                    send_notification_email(form_owner.email, subject, email_body_html)
                 except Exception as mail_e:
-                   print(f"ERROR: Exception occurred during email send call: {mail_e}")
-                   # Don't fail the whole request if email fails, just log it
-
+                     # ---> Indent this line (Level 6)
+                    print(f"ERROR: Exception occurred during email send call: {mail_e}")
             # --- END: Send Email Notification ---
-            flash('Thank you! Your submission has been recorded.', 'success')
-            return redirect(url_for('public_form', form_key=form_key)) # PRG pattern
 
+            # --- START: Send Outbound Webhook --- (Indent Level 4)
             if form_owner and form_owner.plan == 'pro' and form_owner.subscription_status == 'active' and form.webhook_url:
-            webhook_payload = {
-                'form_id': form.id,
-                'form_title': form.title,
-                'submission_id': new_submission.id,
-                'submitted_at': new_submission.submitted_at.isoformat() + 'Z', # ISO 8601 format
-                'data': submission_data_dict # The dict of field_id: value pairs
-               }
-               try:
-                   print(f"DEBUG: Sending webhook for sub {new_submission.id} to {form.webhook_url}")
-                # Using requests library (ensure imported: import requests)
-                   response = requests.post(form.webhook_url, json=webhook_payload, timeout=5)
-                # Log status but don't let webhook failure stop user flow
-                   print(f"DEBUG: Webhook response status: {response.status_code}")
-                # Could add check here: if response.status_code >= 400: log error body
-               except requests.exceptions.RequestException as webhook_e:
-                   print(f"ERROR: Failed to send webhook (network) to {form.webhook_url}: {webhook_e}")
-               except Exception as webhook_e:
-                   print(f"ERROR: Unexpected error sending webhook: {webhook_e}")
-        # --- END: Send Outbound Webhook ---
+                 # ---> Indent this block (Level 5)
+                webhook_payload = { # Indent Level 6
+                    'form_id': form.id,
+                    'form_title': form.title,
+                    'submission_id': new_submission.id,
+                    'submitted_at': new_submission.submitted_at.isoformat() + 'Z',
+                    'data': submission_data_dict
+                }
+                try: # Indent Level 6
+                    # ---> Indent this block (Level 7)
+                    print(f"DEBUG: Sending webhook for sub {new_submission.id} to {form.webhook_url}")
+                    response = requests.post(form.webhook_url, json=webhook_payload, timeout=5)
+                    print(f"DEBUG: Webhook response status: {response.status_code}")
+                except requests.exceptions.RequestException as webhook_e: # Indent Level 6
+                     # ---> Indent this line (Level 7)
+                    print(f"ERROR: Failed to send webhook (network) to {form.webhook_url}: {webhook_e}")
+                except Exception as webhook_e: # Indent Level 6
+                     # ---> Indent this line (Level 7)
+                     print(f"ERROR: Unexpected error sending webhook: {webhook_e}")
+            # --- END: Send Outbound Webhook ---
 
+            # --- START: Custom Redirect Logic --- (Indent Level 4)
             if form_owner and form_owner.plan == 'pro' and form_owner.subscription_status == 'active' and form.redirect_url:
+                # ---> Indent this block (Level 5)
                 print(f"DEBUG: Pro user has redirect URL. Redirecting to: {form.redirect_url}")
-            # Basic validation for safety
-                if form.redirect_url.lower().startswith(('http://', 'https://')):
-                     return redirect(form.redirect_url)
-                else:
-                     print(f"WARN: Invalid redirect URL protocol for form {form.id}: {form.redirect_url}")
+                if form.redirect_url.lower().startswith(('http://', 'https://')): # Indent Level 6
+                     return redirect(form.redirect_url) # Indent Level 7
+                else: # Indent Level 6
+                     print(f"WARN: Invalid redirect URL protocol for form {form.id}: {form.redirect_url}") # Indent Level 7
                      flash('Submission recorded successfully. Invalid redirect URL configured by form owner.', 'info')
-                 # Fallback to default thank you flash on the form page
-                     return redirect(url_for('public_form', form_key=form_key))
-            else:
-             # Default redirect (shows flash message on same page)
+                     return redirect(url_for('public_form', form_key=form_key)) # Indent Level 7
+            else: # Indent Level 4 (matches 'if form_owner and ...')
+                 # ---> Indent this block (Level 5)
+                 # Default redirect
                  flash('Thank you! Your submission has been recorded.', 'success')
                  return redirect(url_for('public_form', form_key=form_key))
-        # --- END: Custom Redirect Logic ---
+            # --- END: Custom Redirect Logic ---
 
-        
-        except Exception as e:
+        except Exception as e: # Indent Level 3 (matches 'try' for saving)
             # Handle potential database errors during save
+             # ---> Indent this block (Level 4)
             db.session.rollback()
             flash(f'An error occurred while saving submission: {e}', 'danger')
             print(f"Error saving submission form {form.id}: {e}")
             errors["_save_error"] = "Could not save submission due to a server error."
             return render_template('public_form.html', form=form, fields=fields, errors=errors, submitted_data=submitted_data)
+        # --- End of try/except for saving ---
+    # --- End of 'if request.method == POST' block ---
 
-    if 'fields' not in locals(): # Ensure fields is defined if POST wasn't hit
-         fields_for_display = Field.query.filter_by(form_id=form.id).order_by(Field.id).all()
-    else:
-         fields_for_display = fields # Use fields from POST logic if defined
-    # ---> ADD THIS DEBUG PRINT <---
-    if form.author:
-        print(f"DEBUG: Rendering public form {form.id}. Author ID: {form.author.id}, Author Plan: '{form.author.plan}', Author Status: '{form.author.subscription_status}'")
-    else:
-        # This would indicate a problem loading the relationship
-        print(f"DEBUG: Rendering public form {form.id}. Author relationship not loaded or null.")
-    # ---> END DEBUG PRINT <---
-    # --- Display the form (GET request) ---
+    # --- Display the form (GET request) --- (Indent Level 1)
+    # Use fields fetched at the start
+    print(f"DEBUG: Rendering public form {form.id}. Author ID: {form.author.id if form.author else 'None'}, Author Plan: '{form.author.plan if form.author else 'N/A'}', Author Status: '{form.author.subscription_status if form.author else 'N/A'}'")
     return render_template('public_form.html',
                            form=form,
                            fields=fields, # Use fields fetched at start
