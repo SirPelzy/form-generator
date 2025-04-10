@@ -218,54 +218,108 @@ def dashboard():
     user_forms = Form.query.filter_by(user_id=current_user.id).order_by(Form.created_at.desc()).all()
     return render_template('dashboard.html', title='Dashboard', user_forms=user_forms)
 
-# Create Form Route #
 @app.route('/create_form', methods=['GET', 'POST'])
 @login_required
 def create_form():
     if request.method == 'POST':
-        # *** START: Form Limit Check ***
-        if current_user.plan == 'free': # Check the user's plan attribute
+        # --- CSRF Check ---
+        try:
+            validate_csrf(request.form.get('csrf_token'))
+        except ValidationError:
+             flash('Invalid CSRF token.', 'danger'); return redirect(url_for('dashboard'))
+
+        # --- Check Action Type ---
+        action = request.form.get('action')
+
+        # --- Form Limit Check (Apply to BOTH actions) ---
+        form_created = False # Flag to track if we should proceed
+        if current_user.plan == 'free':
             current_form_count = Form.query.filter_by(user_id=current_user.id).count()
             if current_form_count >= MAX_FORMS_FREE_TIER:
-                flash(f"You have reached the limit of {MAX_FORMS_FREE_TIER} forms for the free tier. Delete an existing form or upgrade for more.", "warning")
-                return redirect(url_for('dashboard')) # Or pricing page
-        # *** END: Form Limit Check ***
-        
-        form_title = request.form.get('form_title')
-        form_description = request.form.get('form_description') # Get optional description
+                flash(f"You have reached the limit of {MAX_FORMS_FREE_TIER} forms for the free tier.", "warning")
+                return redirect(url_for('dashboard'))
+            else:
+                 form_created = True # Allow creation below limit
+        else: # Pro users can always create
+            form_created = True
 
-        # Basic validation
-        if not form_title:
-            flash('Form title is required.', 'warning')
-            # Pass submitted values back to template if re-rendering
-            return render_template('create_form.html', title='Create Form', current_title=form_title, current_description=form_description)
+        if not form_created: # Should theoretically not be reached if check above redirects
+             return redirect(url_for('dashboard'))
 
-        # Generate a unique key using secrets module
-        form_key = secrets.token_urlsafe(16)
-
-        # Create the new form object using your defined model
-        new_form = Form(title=form_title,
-                        description=form_description,
-                        user_id=current_user.id, # Use user_id as defined in your Form model
-                        unique_key=form_key)
-                        # created_at has a default in your model
-
+        # --- Process Based on Action ---
         try:
-            db.session.add(new_form)
-            db.session.commit()
-            flash(f'Form "{form_title}" created successfully! Now add some fields.', 'success')
-            # Redirect to the dashboard for now. We'll add an edit link there.
-            return redirect(url_for('dashboard'))
-            # Alternative: Redirect directly to edit page:
-            # return redirect(url_for('edit_form', form_id=new_form.id))
-        except Exception as e:
-            db.session.rollback() # Roll back in case of error
-            flash(f'Error creating form. Please try again. {e}', 'danger')
-            # Log the error for your debugging (visible in Replit console)
-            print(f"Error creating form: {e}")
+            if action == 'create_blank':
+                # --- Create Blank Form Logic ---
+                form_title = request.form.get('form_title')
+                form_description = request.form.get('form_description')
+                if not form_title:
+                    flash('Form title is required.', 'warning')
+                    # Re-render options page with error and previous input
+                    return render_template('create_options.html', title='Create Form', templates=TEMPLATES,
+                                           current_title=form_title, current_description=form_description)
 
-    # If GET request, just show the form creation page
-    return render_template('create_form.html', title='Create Form')
+                form_key = secrets.token_urlsafe(16)
+                new_form = Form(title=form_title, description=form_description,
+                                user_id=current_user.id, unique_key=form_key)
+                db.session.add(new_form)
+                db.session.commit()
+                flash(f'Form "{form_title}" created successfully! Now add some fields.', 'success')
+                return redirect(url_for('edit_form', form_id=new_form.id)) # Redirect to edit page
+
+            elif action == 'create_from_template':
+                # --- Create Form From Template Logic ---
+                template_id = request.form.get('template_id')
+                template_data = TEMPLATES.get(template_id)
+
+                if not template_data:
+                    flash('Invalid template selected.', 'warning')
+                    return redirect(url_for('create_form')) # Back to options page
+
+                form_key = secrets.token_urlsafe(16)
+                # Create the form first
+                new_form = Form(title=f"{template_data['name']}", # Use template name as title
+                                description=template_data['description'], # Use template description
+                                user_id=current_user.id, unique_key=form_key)
+                db.session.add(new_form)
+                # We need the ID before adding fields, commit or flush here
+                db.session.commit() # Commit here to get ID reliably
+
+                # Create fields based on template definition
+                new_fields = []
+                for field_def in template_data['fields']:
+                    new_field = Field(
+                        label=field_def['label'],
+                        field_type=field_def['field_type'],
+                        required=field_def['required'],
+                        options=field_def.get('options'), # Use .get() for optional options
+                        form_id=new_form.id # Link to the new form
+                    )
+                    new_fields.append(new_field)
+
+                if new_fields:
+                    db.session.add_all(new_fields)
+                    db.session.commit() # Commit the new fields
+
+                flash(f'Form "{new_form.title}" created from template! You can customize it now.', 'success')
+                return redirect(url_for('edit_form', form_id=new_form.id)) # Redirect to edit page
+
+            else:
+                # Unknown action
+                flash('Invalid action.', 'warning')
+                return redirect(url_for('create_form'))
+
+        except Exception as e:
+            # General error handling during creation
+            db.session.rollback()
+            flash(f'An error occurred: {e}', 'danger')
+            print(f"Error during form creation (action: {action}): {e}")
+            return redirect(url_for('create_form'))
+
+    # --- GET Request ---
+    # Show the page with template options and the blank form creation section
+    return render_template('create_options.html', title='Create Form', templates=TEMPLATES)
+
+# --- End of create_form function ---
 
 # --- EDIT FORM Route (Handles Adding Fields and Displaying) ---
 
