@@ -25,6 +25,7 @@ import io # Input/Output operations
 from flask import Response # To build the CSV response
 import sendgrid
 from sendgrid.helpers.mail import Mail, Email, To, Content
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # --- Load Paddle Configuration ---
 PADDLE_VENDOR_ID = os.environ.get('PADDLE_VENDOR_ID')
@@ -46,6 +47,10 @@ MAX_SUBMISSIONS_FREE_TIER = 100
 
 # Initialize Flask App
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(
+    app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
+)
+print("ProxyFix middleware applied.")
 
 # Configuration
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key_for_dev_only_398u3nf')
