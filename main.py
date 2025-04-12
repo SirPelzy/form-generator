@@ -1153,6 +1153,7 @@ def privacy_policy():
 def contact():
     # Get the specific form key from environment variable
     contact_key = os.environ.get('CONTACT_FORM_KEY')
+    client_token = os.environ.get('PADDLE_CLIENT_SIDE_TOKEN')
 
     if not contact_key:
         # Handle case where contact form key isn't set in environment
@@ -1166,7 +1167,8 @@ def contact():
 
     return render_template('contact.html',
                            title='Contact Us',
-                           contact_form_key=contact_key) # Pass key to template
+                           contact_form_key=contact_key,
+                           client_token=client_token) # Pass key to template
 
 if __name__ == '__main__':
     # Ensure database tables are created before running the app for the first time
