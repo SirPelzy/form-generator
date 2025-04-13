@@ -187,6 +187,15 @@ TEMPLATES = {
 # --- End Templates ---
 
 # --- Routes ---
+
+
+@app.route('/debug-sentry-error')
+def trigger_sentry_error():
+    division_by_zero = 1 / 0 # This will raise a ZeroDivisionError
+    return "You should not see this!"
+
+
+
 @app.route('/')
 @app.route('/home')
 def home():
