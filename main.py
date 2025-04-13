@@ -27,7 +27,7 @@ import sendgrid
 from sendgrid.helpers.mail import Mail, Email, To, Content
 from werkzeug.middleware.proxy_fix import ProxyFix
 import sentry_sdk
-from flask import Flask
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 # --- Load Paddle Configuration ---
 PADDLE_VENDOR_ID = os.environ.get('PADDLE_VENDOR_ID')
@@ -46,22 +46,6 @@ if not all([PADDLE_VENDOR_ID, PADDLE_API_KEY, PADDLE_PRO_PRICE_ID]):
 MAX_FORMS_FREE_TIER = 3
 MAX_SUBMISSIONS_FREE_TIER = 100
 # --- End Tier Limits ---
-
-sentry_sdk.init(
-    dsn="https://270e133e7768da2d9e5abb40ad41af17@o4509146309918720.ingest.us.sentry.io/4509146313064449",
-    # Add data like request headers and IP for users,
-    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
-    send_default_pii=True,
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for tracing.
-    traces_sample_rate=1.0,
-    # Set profile_session_sample_rate to 1.0 to profile 100%
-    # of profile sessions.
-    profile_session_sample_rate=1.0,
-    # Set profile_lifecycle to "trace" to automatically
-    # run the profiler on when there is an active transaction
-    profile_lifecycle="trace",
-)
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -86,40 +70,57 @@ else:
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# --- Initialize CSRF Protection AFTER setting SECRET_KEY ---
-csrf = CSRFProtect(app)
-# You could also use CSRFProtect().init_app(app) later, but this is common.
-# --- END CSRF Initialization ---
+SENTRY_DSN = os.environ.get('SENTRY_DSN')
+if SENTRY_DSN:
+    try:
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            # Enable Flask integration to catch Flask-specific errors
+            integrations=[FlaskIntegration()],
+            # Set traces_sample_rate to capture performance data.
+            # 1.0 captures 100%; lower this significantly in high-traffic production.
+            traces_sample_rate=1.0,
+            # Set profiles_sample_rate to profile transactions.
+            profiles_sample_rate=1.0,
+            # Set environment based on FLASK_ENV or default to 'development'
+            environment=os.environ.get('FLASK_ENV', 'development')
+        )
+        print("Sentry initialized successfully.")
+    except Exception as e:
+        # Catch errors during Sentry init itself
+        print(f"ERROR: Failed to initialize Sentry: {e}")
+else:
+    print("WARNING: SENTRY_DSN environment variable not set. Sentry reporting disabled.")
 
-# --- START: Ensure this Limiter block is PRESENT and HERE ---
+
+csrf = CSRFProtect(app)
+
+
 limiter = Limiter(
     get_remote_address, # Use IP address to identify users for limiting
     app=app,
     default_limits=["200 per day", "50 per hour"], # Default limits for all routes
     storage_uri="memory://", # Use in-memory storage (Note: limits reset on app restart)
 )
-# --- END: Limiter Initialization ---
 
-# Initialize Extensions
-# db defined in models.py, initialize it with the app
 db.init_app(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login' # Redirect to 'login' view if user needs to log in
 login_manager.login_message_category = 'info' # Flash message category
 
-# Configure the user loader function required by Flask-Login
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Define allowed field types (used in the template dropdown)
+
 ALLOWED_FIELD_TYPES = [
     'text', 'email', 'textarea', 'number', 'date',
     'checkbox', 'radio', 'select'
 ]
 
-# --- Email Sending Helper ---
+
 def send_notification_email(to_email, subject, html_content):
     # Ensure required env vars are set
     sg_api_key = os.environ.get('SENDGRID_API_KEY')
