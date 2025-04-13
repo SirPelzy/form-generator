@@ -26,6 +26,8 @@ from flask import Response # To build the CSV response
 import sendgrid
 from sendgrid.helpers.mail import Mail, Email, To, Content
 from werkzeug.middleware.proxy_fix import ProxyFix
+import sentry_sdk
+from flask import Flask
 
 # --- Load Paddle Configuration ---
 PADDLE_VENDOR_ID = os.environ.get('PADDLE_VENDOR_ID')
@@ -44,6 +46,22 @@ if not all([PADDLE_VENDOR_ID, PADDLE_API_KEY, PADDLE_PRO_PRICE_ID]):
 MAX_FORMS_FREE_TIER = 3
 MAX_SUBMISSIONS_FREE_TIER = 100
 # --- End Tier Limits ---
+
+sentry_sdk.init(
+    dsn="https://270e133e7768da2d9e5abb40ad41af17@o4509146309918720.ingest.us.sentry.io/4509146313064449",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=True,
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for tracing.
+    traces_sample_rate=1.0,
+    # Set profile_session_sample_rate to 1.0 to profile 100%
+    # of profile sessions.
+    profile_session_sample_rate=1.0,
+    # Set profile_lifecycle to "trace" to automatically
+    # run the profiler on when there is an active transaction
+    profile_lifecycle="trace",
+)
 
 # Initialize Flask App
 app = Flask(__name__)
